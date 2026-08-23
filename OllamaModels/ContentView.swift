@@ -3,6 +3,7 @@ import SwiftUI
 private enum SidebarDestination: Hashable {
     case models
     case benchmarks
+    case doctor
     case history
 }
 
@@ -10,6 +11,7 @@ private enum SidebarDestination: Hashable {
 struct ContentView: View {
     @State private var viewModel: ModelsViewModel
     @State private var benchmarkViewModel: BenchmarkViewModel
+    @State private var modelDoctorViewModel: ModelDoctorViewModel
     @State private var selectedDestination: SidebarDestination = .models
     @State private var filterText = ""
     @State private var showingAddModel = false
@@ -22,10 +24,12 @@ struct ContentView: View {
     init(
         viewModel: ModelsViewModel = ModelsViewModel(),
         benchmarkViewModel: BenchmarkViewModel = BenchmarkViewModel(),
+        modelDoctorViewModel: ModelDoctorViewModel = ModelDoctorViewModel(),
         loadsOnAppear: Bool = true
     ) {
         _viewModel = State(initialValue: viewModel)
         _benchmarkViewModel = State(initialValue: benchmarkViewModel)
+        _modelDoctorViewModel = State(initialValue: modelDoctorViewModel)
         self.loadsOnAppear = loadsOnAppear
     }
 
@@ -84,6 +88,8 @@ struct ContentView: View {
                     .tag(SidebarDestination.models)
                 Label("Benchmark Lab", systemImage: "gauge.with.dots.needle.67percent")
                     .tag(SidebarDestination.benchmarks)
+                Label("Model Doctor", systemImage: "stethoscope")
+                    .tag(SidebarDestination.doctor)
                 Label("History & Compare", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
                     .tag(SidebarDestination.history)
             }
@@ -132,6 +138,12 @@ struct ContentView: View {
         case .benchmarks:
             BenchmarkView(
                 viewModel: benchmarkViewModel,
+                installedModels: viewModel.models,
+                loadedModelNames: viewModel.runtimeStatus.loadedModelNames
+            )
+        case .doctor:
+            ModelDoctorView(
+                viewModel: modelDoctorViewModel,
                 installedModels: viewModel.models,
                 loadedModelNames: viewModel.runtimeStatus.loadedModelNames
             )

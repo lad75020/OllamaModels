@@ -39,6 +39,23 @@ struct OllamaClient: Sendable {
         }
     }
 
+    func modelDoctorProfile(for model: OllamaModel) async throws -> ModelDoctorProfile {
+        do {
+            let body = try JSONEncoder().encode(OllamaShowRequest(model: model.name))
+            let request = try makeRequest(path: "api/show", method: "POST", body: body)
+            let (data, response) = try await session.data(for: request)
+            try Self.validate(response, data: data)
+            let showResponse = try JSONDecoder().decode(OllamaShowResponse.self, from: data)
+            return showResponse.profile(for: model)
+        } catch let error as OllamaClientError {
+            throw error
+        } catch let error as DecodingError {
+            throw OllamaClientError.decoding(error.localizedDescription)
+        } catch {
+            throw OllamaClientError.transport(error.localizedDescription)
+        }
+    }
+
     func runtimeStatus() async throws -> OllamaRuntimeStatus {
         do {
             let request = try makeRequest(path: "api/ps")

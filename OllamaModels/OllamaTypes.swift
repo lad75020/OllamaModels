@@ -114,6 +114,86 @@ struct OllamaTagsResponse: Decodable, Sendable {
     let models: [OllamaModel]
 }
 
+struct OllamaShowRequest: Encodable, Sendable {
+    let model: String
+    let verbose = false
+}
+
+private indirect enum OllamaJSONValue: Decodable, Sendable {
+    case number(Double)
+    case string(String)
+    case bool(Bool)
+    case array([OllamaJSONValue])
+    case object([String: OllamaJSONValue])
+    case null
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else if let value = try? container.decode(Double.self) {
+            self = .number(value)
+        } else if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? container.decode([OllamaJSONValue].self) {
+            self = .array(value)
+        } else {
+            self = .object(try container.decode([String: OllamaJSONValue].self))
+        }
+    }
+
+    var integerValue: Int64? {
+        guard case .number(let value) = self, value.isFinite else { return nil }
+        return Int64(exactly: value)
+    }
+}
+
+struct OllamaShowResponse: Decodable, Sendable {
+    let details: OllamaModel.Details?
+    private let modelInfo: [String: OllamaJSONValue]
+
+    private enum CodingKeys: String, CodingKey {
+        case details
+        case modelInfo = "model_info"
+    }
+
+    func profile(for model: OllamaModel) -> ModelDoctorProfile {
+        let architecture = stringValue(for: "general.architecture")
+            ?? details?.family
+            ?? model.family
+        return ModelDoctorProfile(
+            name: model.name,
+            family: architecture,
+            quantization: details?.quantizationLevel ?? model.quantization,
+            fileSizeBytes: model.size,
+            parameterCount: integerValue(exactKey: "general.parameter_count"),
+            maximumContextSize: integerValue(suffix: ".context_length", fallback: 4_096),
+            blockCount: integerValue(suffix: ".block_count", fallback: 0),
+            embeddingLength: integerValue(suffix: ".embedding_length", fallback: 0),
+            attentionHeadCount: integerValue(suffix: ".attention.head_count", fallback: 1),
+            keyValueHeadCount: integerValue(suffix: ".attention.head_count_kv", fallback: 1)
+        )
+    }
+
+    private func integerValue(exactKey: String) -> Int64 {
+        modelInfo[exactKey]?.integerValue ?? 0
+    }
+
+    private func integerValue(suffix: String, fallback: Int) -> Int {
+        guard let value = modelInfo.first(where: { $0.key.hasSuffix(suffix) })?.value.integerValue else {
+            return fallback
+        }
+        return Int(clamping: value)
+    }
+
+    private func stringValue(for key: String) -> String? {
+        guard case .string(let value) = modelInfo[key] else { return nil }
+        return value
+    }
+}
+
 struct OllamaRunningModel: Decodable, Equatable, Sendable {
     let name: String
     let size: Int64

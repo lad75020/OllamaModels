@@ -11,13 +11,17 @@
 		0ABB6167B755B35CA879788A /* BenchmarkTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D369B2997317D7078F9FAED /* BenchmarkTypes.swift */; };
 		150C08D03E9CBBA9E5F5E1D8 /* OllamaModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E1EA17E68FEC8A6C177AC11 /* OllamaModelsTests.swift */; };
 		17DF63B58840297AB256BAE5 /* BenchmarkHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5D73F8DBDCB291E1A688F8 /* BenchmarkHistoryView.swift */; };
+		251045F8EC77C1815B948955 /* ModelDoctorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDBE20820DDF67063C0A2D8F /* ModelDoctorTypes.swift */; };
 		2C48D07345F7EFA430A9D007 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A35008D47B45C5C9D28389 /* ContentView.swift */; };
 		42B81886BAC195938E27B550 /* OllamaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E0AEF17EF4FE2D97176E01 /* OllamaClient.swift */; };
+		5742586ED0D3C1C275679E70 /* ModelDoctorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2B43007DCB759B449FC69E7 /* ModelDoctorView.swift */; };
 		70744667C9D1B95754676C85 /* BenchmarkExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B76C96314138AE99D7CEF4 /* BenchmarkExporter.swift */; };
+		73D0E581F74C2F0AEBAF1A54 /* ModelDoctorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831A9A7C2F8E142552D3B18E /* ModelDoctorViewModel.swift */; };
 		7B9CA795D9654CDB5DF8FAA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33B3ACCB635CE1B49499B662 /* Assets.xcassets */; };
 		7FD943AB45BFB551B1C7AB74 /* ModelsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D54624D64DA25B6FCE4677 /* ModelsViewModel.swift */; };
 		99A8057085B5A48485D7B909 /* OllamaModelsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E7B071F8C84AB29A7053212 /* OllamaModelsApp.swift */; };
 		A4AD352EA3D1A56D4F6A84E1 /* BenchmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F503EB8DF0B6BD27A91F32 /* BenchmarkView.swift */; };
+		AF253904585786870273B10E /* ModelDoctorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68069D173E59CBE0030B31AA /* ModelDoctorTests.swift */; };
 		B6F0D93C1C2B811AFCD6EB0A /* BenchmarkFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AB41946779EA45CA265E725 /* BenchmarkFeatureTests.swift */; };
 		BD25E11BB1E98934A348713C /* BenchmarkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */; };
 		C35D0D2D9CB573B7174117D4 /* OllamaTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975F76FFD37F89BFB3E04452 /* OllamaTypes.swift */; };
@@ -45,13 +49,17 @@
 		445370B08E886010EF0C9CC3 /* OllamaModelsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OllamaModelsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		56E0AEF17EF4FE2D97176E01 /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
 		5D5D73F8DBDCB291E1A688F8 /* BenchmarkHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkHistoryView.swift; sourceTree = "<group>"; };
+		68069D173E59CBE0030B31AA /* ModelDoctorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDoctorTests.swift; sourceTree = "<group>"; };
 		6D369B2997317D7078F9FAED /* BenchmarkTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkTypes.swift; sourceTree = "<group>"; };
 		805002DAE55A20E6A973063C /* BenchmarkPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkPersistence.swift; sourceTree = "<group>"; };
+		831A9A7C2F8E142552D3B18E /* ModelDoctorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDoctorViewModel.swift; sourceTree = "<group>"; };
 		8AAE1F3113D35129FB747B85 /* BenchmarkComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkComparison.swift; sourceTree = "<group>"; };
 		8AB41946779EA45CA265E725 /* BenchmarkFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkFeatureTests.swift; sourceTree = "<group>"; };
 		90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkViewModel.swift; sourceTree = "<group>"; };
 		975F76FFD37F89BFB3E04452 /* OllamaTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaTypes.swift; sourceTree = "<group>"; };
 		B3D54624D64DA25B6FCE4677 /* ModelsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsViewModel.swift; sourceTree = "<group>"; };
+		C2B43007DCB759B449FC69E7 /* ModelDoctorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDoctorView.swift; sourceTree = "<group>"; };
+		EDBE20820DDF67063C0A2D8F /* ModelDoctorTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDoctorTypes.swift; sourceTree = "<group>"; };
 		F059448E3E9AF756715087ED /* OllamaModels.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OllamaModels.entitlements; sourceTree = "<group>"; };
 		FDA9DCE03EA0A06C79B40822 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -70,6 +78,9 @@
 				90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */,
 				42A35008D47B45C5C9D28389 /* ContentView.swift */,
 				FDA9DCE03EA0A06C79B40822 /* Info.plist */,
+				EDBE20820DDF67063C0A2D8F /* ModelDoctorTypes.swift */,
+				C2B43007DCB759B449FC69E7 /* ModelDoctorView.swift */,
+				831A9A7C2F8E142552D3B18E /* ModelDoctorViewModel.swift */,
 				B3D54624D64DA25B6FCE4677 /* ModelsViewModel.swift */,
 				56E0AEF17EF4FE2D97176E01 /* OllamaClient.swift */,
 				F059448E3E9AF756715087ED /* OllamaModels.entitlements */,
@@ -101,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				8AB41946779EA45CA265E725 /* BenchmarkFeatureTests.swift */,
+				68069D173E59CBE0030B31AA /* ModelDoctorTests.swift */,
 				0E1EA17E68FEC8A6C177AC11 /* OllamaModelsTests.swift */,
 			);
 			path = OllamaModelsTests;
@@ -153,6 +165,8 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = B4D23C01AF503F5A0BF14875 /* Build configuration list for PBXProject "OllamaModels" */;
 			developmentRegion = en;
@@ -198,6 +212,9 @@
 				A4AD352EA3D1A56D4F6A84E1 /* BenchmarkView.swift in Sources */,
 				BD25E11BB1E98934A348713C /* BenchmarkViewModel.swift in Sources */,
 				2C48D07345F7EFA430A9D007 /* ContentView.swift in Sources */,
+				251045F8EC77C1815B948955 /* ModelDoctorTypes.swift in Sources */,
+				5742586ED0D3C1C275679E70 /* ModelDoctorView.swift in Sources */,
+				73D0E581F74C2F0AEBAF1A54 /* ModelDoctorViewModel.swift in Sources */,
 				7FD943AB45BFB551B1C7AB74 /* ModelsViewModel.swift in Sources */,
 				42B81886BAC195938E27B550 /* OllamaClient.swift in Sources */,
 				99A8057085B5A48485D7B909 /* OllamaModelsApp.swift in Sources */,
@@ -210,6 +227,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B6F0D93C1C2B811AFCD6EB0A /* BenchmarkFeatureTests.swift in Sources */,
+				AF253904585786870273B10E /* ModelDoctorTests.swift in Sources */,
 				150C08D03E9CBBA9E5F5E1D8 /* OllamaModelsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -247,16 +265,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = OllamaModels/OllamaModels.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				INFOPLIST_FILE = OllamaModels/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.lad75020.OllamaModels;
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SDKROOT = macosx;
 			};
 			name = Release;
