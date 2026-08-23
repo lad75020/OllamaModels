@@ -1,0 +1,451 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03727656ECB0EAA085A26723 /* BenchmarkPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805002DAE55A20E6A973063C /* BenchmarkPersistence.swift */; };
+		0ABB6167B755B35CA879788A /* BenchmarkTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D369B2997317D7078F9FAED /* BenchmarkTypes.swift */; };
+		150C08D03E9CBBA9E5F5E1D8 /* OllamaModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E1EA17E68FEC8A6C177AC11 /* OllamaModelsTests.swift */; };
+		17DF63B58840297AB256BAE5 /* BenchmarkHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5D73F8DBDCB291E1A688F8 /* BenchmarkHistoryView.swift */; };
+		2C48D07345F7EFA430A9D007 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A35008D47B45C5C9D28389 /* ContentView.swift */; };
+		42B81886BAC195938E27B550 /* OllamaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E0AEF17EF4FE2D97176E01 /* OllamaClient.swift */; };
+		70744667C9D1B95754676C85 /* BenchmarkExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B76C96314138AE99D7CEF4 /* BenchmarkExporter.swift */; };
+		7B9CA795D9654CDB5DF8FAA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33B3ACCB635CE1B49499B662 /* Assets.xcassets */; };
+		7FD943AB45BFB551B1C7AB74 /* ModelsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D54624D64DA25B6FCE4677 /* ModelsViewModel.swift */; };
+		99A8057085B5A48485D7B909 /* OllamaModelsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E7B071F8C84AB29A7053212 /* OllamaModelsApp.swift */; };
+		A4AD352EA3D1A56D4F6A84E1 /* BenchmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F503EB8DF0B6BD27A91F32 /* BenchmarkView.swift */; };
+		B6F0D93C1C2B811AFCD6EB0A /* BenchmarkFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AB41946779EA45CA265E725 /* BenchmarkFeatureTests.swift */; };
+		BD25E11BB1E98934A348713C /* BenchmarkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */; };
+		C35D0D2D9CB573B7174117D4 /* OllamaTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975F76FFD37F89BFB3E04452 /* OllamaTypes.swift */; };
+		ED760D60AED0BF063F321615 /* BenchmarkComparison.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AAE1F3113D35129FB747B85 /* BenchmarkComparison.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		EDD91DB6A72891D819081EB7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2BC2A6FD524FE1EAE431D5C8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FBB2F5B4AA79E3B6F8601B08;
+			remoteInfo = OllamaModels;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		02F503EB8DF0B6BD27A91F32 /* BenchmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkView.swift; sourceTree = "<group>"; };
+		0E1EA17E68FEC8A6C177AC11 /* OllamaModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaModelsTests.swift; sourceTree = "<group>"; };
+		0E7B071F8C84AB29A7053212 /* OllamaModelsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaModelsApp.swift; sourceTree = "<group>"; };
+		17F0A16C5F060A5215028AEF /* OllamaModels.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OllamaModels.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		24B76C96314138AE99D7CEF4 /* BenchmarkExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkExporter.swift; sourceTree = "<group>"; };
+		33B3ACCB635CE1B49499B662 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		42A35008D47B45C5C9D28389 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		445370B08E886010EF0C9CC3 /* OllamaModelsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OllamaModelsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		56E0AEF17EF4FE2D97176E01 /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
+		5D5D73F8DBDCB291E1A688F8 /* BenchmarkHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkHistoryView.swift; sourceTree = "<group>"; };
+		6D369B2997317D7078F9FAED /* BenchmarkTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkTypes.swift; sourceTree = "<group>"; };
+		805002DAE55A20E6A973063C /* BenchmarkPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkPersistence.swift; sourceTree = "<group>"; };
+		8AAE1F3113D35129FB747B85 /* BenchmarkComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkComparison.swift; sourceTree = "<group>"; };
+		8AB41946779EA45CA265E725 /* BenchmarkFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkFeatureTests.swift; sourceTree = "<group>"; };
+		90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkViewModel.swift; sourceTree = "<group>"; };
+		975F76FFD37F89BFB3E04452 /* OllamaTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaTypes.swift; sourceTree = "<group>"; };
+		B3D54624D64DA25B6FCE4677 /* ModelsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsViewModel.swift; sourceTree = "<group>"; };
+		F059448E3E9AF756715087ED /* OllamaModels.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OllamaModels.entitlements; sourceTree = "<group>"; };
+		FDA9DCE03EA0A06C79B40822 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0A05F6B68B7167435F0A50E7 /* OllamaModels */ = {
+			isa = PBXGroup;
+			children = (
+				33B3ACCB635CE1B49499B662 /* Assets.xcassets */,
+				8AAE1F3113D35129FB747B85 /* BenchmarkComparison.swift */,
+				24B76C96314138AE99D7CEF4 /* BenchmarkExporter.swift */,
+				5D5D73F8DBDCB291E1A688F8 /* BenchmarkHistoryView.swift */,
+				805002DAE55A20E6A973063C /* BenchmarkPersistence.swift */,
+				6D369B2997317D7078F9FAED /* BenchmarkTypes.swift */,
+				02F503EB8DF0B6BD27A91F32 /* BenchmarkView.swift */,
+				90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */,
+				42A35008D47B45C5C9D28389 /* ContentView.swift */,
+				FDA9DCE03EA0A06C79B40822 /* Info.plist */,
+				B3D54624D64DA25B6FCE4677 /* ModelsViewModel.swift */,
+				56E0AEF17EF4FE2D97176E01 /* OllamaClient.swift */,
+				F059448E3E9AF756715087ED /* OllamaModels.entitlements */,
+				0E7B071F8C84AB29A7053212 /* OllamaModelsApp.swift */,
+				975F76FFD37F89BFB3E04452 /* OllamaTypes.swift */,
+			);
+			path = OllamaModels;
+			sourceTree = "<group>";
+		};
+		263C1CA841669D37EB890E1A = {
+			isa = PBXGroup;
+			children = (
+				0A05F6B68B7167435F0A50E7 /* OllamaModels */,
+				FB437EF3D0B25D7D9649355C /* OllamaModelsTests */,
+				F7B8FB9108AAD19A65320276 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F7B8FB9108AAD19A65320276 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				17F0A16C5F060A5215028AEF /* OllamaModels.app */,
+				445370B08E886010EF0C9CC3 /* OllamaModelsTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FB437EF3D0B25D7D9649355C /* OllamaModelsTests */ = {
+			isa = PBXGroup;
+			children = (
+				8AB41946779EA45CA265E725 /* BenchmarkFeatureTests.swift */,
+				0E1EA17E68FEC8A6C177AC11 /* OllamaModelsTests.swift */,
+			);
+			path = OllamaModelsTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3C31A8835C16B295E0B74E99 /* OllamaModelsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6CD1E5352361739A4D34F1AA /* Build configuration list for PBXNativeTarget "OllamaModelsTests" */;
+			buildPhases = (
+				E0A9F33544B561D3BC89EB19 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8D4B82EE6937029CFB5F23C3 /* PBXTargetDependency */,
+			);
+			name = OllamaModelsTests;
+			packageProductDependencies = (
+			);
+			productName = OllamaModelsTests;
+			productReference = 445370B08E886010EF0C9CC3 /* OllamaModelsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FBB2F5B4AA79E3B6F8601B08 /* OllamaModels */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2B97BD36620B496D0B7E9838 /* Build configuration list for PBXNativeTarget "OllamaModels" */;
+			buildPhases = (
+				3AEDC48F226F84A4D2CA714B /* Sources */,
+				6CCD58483056CD206B1AE3C3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OllamaModels;
+			packageProductDependencies = (
+			);
+			productName = OllamaModels;
+			productReference = 17F0A16C5F060A5215028AEF /* OllamaModels.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2BC2A6FD524FE1EAE431D5C8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = B4D23C01AF503F5A0BF14875 /* Build configuration list for PBXProject "OllamaModels" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 263C1CA841669D37EB890E1A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F7B8FB9108AAD19A65320276 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FBB2F5B4AA79E3B6F8601B08 /* OllamaModels */,
+				3C31A8835C16B295E0B74E99 /* OllamaModelsTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6CCD58483056CD206B1AE3C3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B9CA795D9654CDB5DF8FAA8 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3AEDC48F226F84A4D2CA714B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ED760D60AED0BF063F321615 /* BenchmarkComparison.swift in Sources */,
+				70744667C9D1B95754676C85 /* BenchmarkExporter.swift in Sources */,
+				17DF63B58840297AB256BAE5 /* BenchmarkHistoryView.swift in Sources */,
+				03727656ECB0EAA085A26723 /* BenchmarkPersistence.swift in Sources */,
+				0ABB6167B755B35CA879788A /* BenchmarkTypes.swift in Sources */,
+				A4AD352EA3D1A56D4F6A84E1 /* BenchmarkView.swift in Sources */,
+				BD25E11BB1E98934A348713C /* BenchmarkViewModel.swift in Sources */,
+				2C48D07345F7EFA430A9D007 /* ContentView.swift in Sources */,
+				7FD943AB45BFB551B1C7AB74 /* ModelsViewModel.swift in Sources */,
+				42B81886BAC195938E27B550 /* OllamaClient.swift in Sources */,
+				99A8057085B5A48485D7B909 /* OllamaModelsApp.swift in Sources */,
+				C35D0D2D9CB573B7174117D4 /* OllamaTypes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E0A9F33544B561D3BC89EB19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B6F0D93C1C2B811AFCD6EB0A /* BenchmarkFeatureTests.swift in Sources */,
+				150C08D03E9CBBA9E5F5E1D8 /* OllamaModelsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8D4B82EE6937029CFB5F23C3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FBB2F5B4AA79E3B6F8601B08 /* OllamaModels */;
+			targetProxy = EDD91DB6A72891D819081EB7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3BA76488FB8008E4212562D7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.lad75020.OllamaModelsTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OllamaModels.app/Contents/MacOS/OllamaModels";
+			};
+			name = Release;
+		};
+		40ACF3AF35DE8F52BC8C8D8D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = OllamaModels/OllamaModels.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
+				INFOPLIST_FILE = OllamaModels/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.lad75020.OllamaModels;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		513AB2DCB1AABE15B1762248 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.lad75020.OllamaModelsTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OllamaModels.app/Contents/MacOS/OllamaModels";
+			};
+			name = Debug;
+		};
+		621EC962B3C634763990E41D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = OllamaModels/OllamaModels.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = OllamaModels/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.lad75020.OllamaModels;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		B21D588DCC6658C334F463EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		CFA5921735EF0ED21D15385A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2B97BD36620B496D0B7E9838 /* Build configuration list for PBXNativeTarget "OllamaModels" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				621EC962B3C634763990E41D /* Debug */,
+				40ACF3AF35DE8F52BC8C8D8D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6CD1E5352361739A4D34F1AA /* Build configuration list for PBXNativeTarget "OllamaModelsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				513AB2DCB1AABE15B1762248 /* Debug */,
+				3BA76488FB8008E4212562D7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B4D23C01AF503F5A0BF14875 /* Build configuration list for PBXProject "OllamaModels" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFA5921735EF0ED21D15385A /* Debug */,
+				B21D588DCC6658C334F463EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2BC2A6FD524FE1EAE431D5C8 /* Project object */;
+}

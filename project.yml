@@ -1,0 +1,35 @@
+name: OllamaModels
+options:
+  bundleIdPrefix: com.lad75020
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+targets:
+  OllamaModels:
+    type: application
+    platform: macOS
+    sources:
+      - path: OllamaModels
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lad75020.OllamaModels
+        INFOPLIST_FILE: OllamaModels/Info.plist
+        CODE_SIGN_ENTITLEMENTS: OllamaModels/OllamaModels.entitlements
+    scheme:
+      testTargets:
+        - OllamaModelsTests
+  OllamaModelsTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: OllamaModelsTests
+    dependencies:
+      - target: OllamaModels
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lad75020.OllamaModelsTests
+        GENERATE_INFOPLIST_FILE: YES
