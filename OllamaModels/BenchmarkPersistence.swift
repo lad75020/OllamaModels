@@ -45,7 +45,8 @@ struct BenchmarkEnvironmentSnapshot: Codable, Equatable, Sendable {
         guard sysctlbyname("hw.model", &value, &size, nil, 0) == 0 else {
             return "Unknown Mac"
         }
-        return String(cString: value)
+        let bytes = value.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     private static func thermalStateLabel(_ state: ProcessInfo.ThermalState) -> String {

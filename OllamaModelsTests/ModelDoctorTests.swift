@@ -106,6 +106,78 @@ final class ModelDoctorTests: XCTestCase {
         XCTAssertTrue(recommendation.reason.contains("faster"))
     }
 
+    @MainActor
+    func testRemovedTargetDoesNotAbortDiagnosisOfStillInstalledTarget() async {
+        let removed = OllamaModel(
+            name: "gemma4:31b-qat",
+            modifiedAt: nil,
+            size: 20_000_000_000,
+            digest: "removed",
+            details: nil
+        )
+        let installed = OllamaModel(
+            name: "qwen3:4b",
+            modifiedAt: nil,
+            size: 2_300_000_000,
+            digest: "installed",
+            details: nil
+        )
+        let installedProfile = makeProfile(
+            name: installed.name,
+            fileSize: installed.size
+        )
+        let host = makeHost(
+            physical: 36_000_000_000,
+            available: 24_000_000_000
+        )
+        let viewModel = ModelDoctorViewModel(
+            profileProvider: { model in
+                guard model.name != removed.name else {
+                    throw OllamaClientError.server("model '\(model.name)' not found")
+                }
+                return installedProfile
+            },
+            probeRunner: { configuration, iteration in
+                BenchmarkSample(
+                    modelName: configuration.modelName,
+                    iteration: iteration,
+                    startedAt: Date(timeIntervalSince1970: 1_000),
+                    timeToFirstTokenSeconds: 0.25,
+                    totalDurationNanoseconds: 3_000_000_000,
+                    loadDurationNanoseconds: 250_000_000,
+                    promptEvaluationCount: 12,
+                    promptEvaluationDurationNanoseconds: 300_000_000,
+                    evaluationCount: 80,
+                    evaluationDurationNanoseconds: 2_000_000_000
+                )
+            },
+            runtimeProvider: {
+                OllamaRuntimeStatus(
+                    models: [
+                        OllamaRunningModel(
+                            name: installed.name,
+                            size: 2_500_000_000,
+                            sizeVRAM: 2_500_000_000
+                        )
+                    ]
+                )
+            },
+            unloader: {},
+            hostCapture: { host }
+        )
+
+        await viewModel.run(primary: removed, comparison: installed)
+
+        XCTAssertEqual(viewModel.assessments.map(\.profile.name), [installed.name])
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertEqual(
+            viewModel.noticeMessage,
+            "Diagnosis completed for qwen3:4b. Skipped removed model gemma4:31b-qat."
+        )
+        XCTAssertFalse(viewModel.isRunning)
+        XCTAssertEqual(viewModel.currentModelName, "")
+    }
+
     private func makeProfile(
         name: String = "phi4:latest",
         fileSize: Int64,

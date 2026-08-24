@@ -227,8 +227,7 @@ private struct BenchmarkHistoryRow: View {
                 Text(snapshot.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
                 Text("\(snapshot.completedRunCount)/\(snapshot.iterationsRequested) runs")
                 if let summary = snapshot.summary {
-                    Text(summary.averageGenerationTokensPerSecond, format: .number.precision(.fractionLength(1)))
-                        + Text(" tok/s")
+                    Text("\(summary.averageGenerationTokensPerSecond, format: .number.precision(.fractionLength(1))) tok/s")
                 }
             }
             .font(.caption)

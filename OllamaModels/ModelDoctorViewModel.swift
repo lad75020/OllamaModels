@@ -86,44 +86,53 @@ final class ModelDoctorViewModel {
         if let comparison, comparison.name != primary.name {
             targets.append(comparison)
         }
+        var skippedRemovedModelNames: [String] = []
 
         do {
             for model in targets {
-                try Task.checkCancellation()
-                currentModelName = model.name
-                try await unloader()
-                let profile = try await profileProvider(model)
-                let before = hostCapture()
-                let sample = try await probeRunner(
-                    BenchmarkConfiguration(
-                        modelName: model.name,
-                        prompt: "Reply with one concise sentence explaining why local inference is useful.",
-                        outputTokenLimit: 32
-                    ),
-                    1
-                )
-                let runtime = try await runtimeProvider()
-                let loaded = runtime.models.first(where: { $0.name == model.name })
-                    ?? runtime.models.first
-                let after = hostCapture()
-                let probe = ModelDoctorProbe(
-                    modelName: model.name,
-                    observedMemoryBytes: loaded?.size ?? 0,
-                    acceleratorMemoryBytes: loaded?.sizeVRAM ?? 0,
-                    generationTokensPerSecond: sample.generationTokensPerSecond,
-                    promptTokensPerSecond: sample.promptTokensPerSecond,
-                    timeToFirstTokenSeconds: sample.timeToFirstTokenSeconds,
-                    loadDurationSeconds: sample.loadDurationSeconds
-                )
-                assessments.append(
-                    ModelDoctorAnalyzer.assess(
-                        profile: profile,
-                        hostBefore: before,
-                        hostAfter: after,
-                        probe: probe
+                do {
+                    try Task.checkCancellation()
+                    currentModelName = model.name
+                    try await unloader()
+                    let profile = try await profileProvider(model)
+                    let before = hostCapture()
+                    let sample = try await probeRunner(
+                        BenchmarkConfiguration(
+                            modelName: model.name,
+                            prompt: "Reply with one concise sentence explaining why local inference is useful.",
+                            outputTokenLimit: 32
+                        ),
+                        1
                     )
-                )
-                try await unloader()
+                    let runtime = try await runtimeProvider()
+                    let loaded = runtime.models.first(where: { $0.name == model.name })
+                        ?? runtime.models.first
+                    let after = hostCapture()
+                    let probe = ModelDoctorProbe(
+                        modelName: model.name,
+                        observedMemoryBytes: loaded?.size ?? 0,
+                        acceleratorMemoryBytes: loaded?.sizeVRAM ?? 0,
+                        generationTokensPerSecond: sample.generationTokensPerSecond,
+                        promptTokensPerSecond: sample.promptTokensPerSecond,
+                        timeToFirstTokenSeconds: sample.timeToFirstTokenSeconds,
+                        loadDurationSeconds: sample.loadDurationSeconds
+                    )
+                    assessments.append(
+                        ModelDoctorAnalyzer.assess(
+                            profile: profile,
+                            hostBefore: before,
+                            hostAfter: after,
+                            probe: probe
+                        )
+                    )
+                    try await unloader()
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    guard Self.isRemovedModelError(error) else { throw error }
+                    skippedRemovedModelNames.append(model.name)
+                    try? await unloader()
+                }
             }
 
             if assessments.count == 2 {
@@ -132,9 +141,10 @@ final class ModelDoctorViewModel {
                     and: assessments[1]
                 )
             }
-            noticeMessage = assessments.count == 1
-                ? "Diagnosis completed for \(primary.name)."
-                : "Diagnosis and variant comparison completed."
+            noticeMessage = Self.completionNotice(
+                assessments: assessments,
+                skippedRemovedModelNames: skippedRemovedModelNames
+            )
         } catch is CancellationError {
             try? await unloader()
             noticeMessage = "Model Doctor stopped."
@@ -146,5 +156,40 @@ final class ModelDoctorViewModel {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private static func isRemovedModelError(_ error: Error) -> Bool {
+        guard case .server(let message) = error as? OllamaClientError else { return false }
+        let normalized = message.lowercased()
+        return normalized.contains("model")
+            && (normalized.contains("not found") || normalized.contains("does not exist"))
+    }
+
+    private static func completionNotice(
+        assessments: [ModelDoctorAssessment],
+        skippedRemovedModelNames: [String]
+    ) -> String? {
+        let completed: String?
+        switch assessments.count {
+        case 1:
+            completed = "Diagnosis completed for \(assessments[0].profile.name)."
+        case 2:
+            completed = "Diagnosis and variant comparison completed."
+        default:
+            completed = nil
+        }
+
+        let skipped: String?
+        switch skippedRemovedModelNames.count {
+        case 1:
+            skipped = "Skipped removed model \(skippedRemovedModelNames[0])."
+        case 2...:
+            skipped = "Skipped removed models \(skippedRemovedModelNames.joined(separator: ", "))."
+        default:
+            skipped = nil
+        }
+
+        let notices = [completed, skipped].compactMap { $0 }
+        return notices.isEmpty ? nil : notices.joined(separator: " ")
     }
 }

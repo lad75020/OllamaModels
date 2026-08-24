@@ -299,7 +299,6 @@ struct ModelDoctorView: View {
     }
 
     private func synchronizeSelection() {
-        guard !viewModel.isRunning else { return }
         let names = candidates.map(\.name)
         if !names.contains(selectedModelName) {
             selectedModelName = loadedModelNames.first(where: names.contains)
