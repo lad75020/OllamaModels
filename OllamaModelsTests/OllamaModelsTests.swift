@@ -127,6 +127,24 @@ final class OllamaModelsTests: XCTestCase {
         XCTAssertNil(viewModel.errorMessage)
     }
 
+    @MainActor
+    func testUnloadClearsLoadedRuntimeStatusAndShowsNotice() async {
+        let loadedStatus = OllamaRuntimeStatus(
+            models: [OllamaRunningModel(name: "qwen3:4b", size: 2_300_000_000, sizeVRAM: 1_800_000_000)]
+        )
+        let viewModel = ModelsViewModel(
+            initialRuntimeStatus: loadedStatus,
+            unloader: {}
+        )
+
+        await viewModel.unloadAllModels()
+
+        XCTAssertEqual(viewModel.runtimeStatus, .empty)
+        XCTAssertEqual(viewModel.noticeMessage, "Unloaded all models.")
+        XCTAssertFalse(viewModel.isUnloadingModels)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
     func testDecodesOllamaTagsResponse() throws {
         let data = Data(
             """

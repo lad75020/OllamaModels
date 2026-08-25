@@ -4,13 +4,17 @@ import Observation
 @MainActor
 @Observable
 final class ModelsViewModel {
+    typealias Unloader = @Sendable () async throws -> Void
+
     private let client: OllamaClient
+    private let unloader: Unloader
     private var operationTask: Task<Void, Never>?
 
     private(set) var models: [OllamaModel]
     private(set) var isRefreshing = false
     private(set) var activePull: PullState?
     private(set) var deletingModelName: String?
+    private(set) var isUnloadingModels = false
     private(set) var lastUpdated: Date?
     private(set) var runtimeStatus: OllamaRuntimeStatus
 
@@ -22,15 +26,17 @@ final class ModelsViewModel {
     }
 
     var isBusy: Bool {
-        isRefreshing || activePull != nil || deletingModelName != nil
+        isRefreshing || activePull != nil || deletingModelName != nil || isUnloadingModels
     }
 
     init(
         client: OllamaClient = OllamaClient(),
         initialModels: [OllamaModel] = [],
-        initialRuntimeStatus: OllamaRuntimeStatus = .empty
+        initialRuntimeStatus: OllamaRuntimeStatus = .empty,
+        unloader: Unloader? = nil
     ) {
         self.client = client
+        self.unloader = unloader ?? { try await client.unloadAllModelsAndWait() }
         self.models = initialModels.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
@@ -107,6 +113,22 @@ final class ModelsViewModel {
             models.removeAll { $0.id == model.id }
             noticeMessage = "Removed \(model.name)."
             lastUpdated = Date()
+        } catch {
+            errorMessage = message(for: error)
+        }
+    }
+
+    func unloadAllModels() async {
+        guard !isBusy, !runtimeStatus.models.isEmpty else { return }
+        isUnloadingModels = true
+        errorMessage = nil
+        noticeMessage = nil
+        defer { isUnloadingModels = false }
+
+        do {
+            try await unloader()
+            runtimeStatus = .empty
+            noticeMessage = "Unloaded all models."
         } catch {
             errorMessage = message(for: error)
         }

@@ -192,6 +192,14 @@ struct ContentView: View {
             }
 
             ToolbarItem {
+                Button("Unload", systemImage: "eject") {
+                    Task { await viewModel.unloadAllModels() }
+                }
+                .disabled(viewModel.isBusy || viewModel.runtimeStatus.models.isEmpty)
+                .help("Unload all models currently loaded in Ollama")
+            }
+
+            ToolbarItem {
                 Button("Add Model", systemImage: "plus") {
                     showingAddModel = true
                 }
@@ -340,6 +348,10 @@ struct ContentView: View {
                 ProgressView()
                     .controlSize(.small)
                 Text("Removing \(deletingModelName)…")
+            } else if viewModel.isUnloadingModels {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Unloading models…")
             } else {
                 Image(systemName: "circle.fill")
                     .font(.system(size: 7))
