@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 110;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -133,8 +133,6 @@
 				8D4B82EE6937029CFB5F23C3 /* PBXTargetDependency */,
 			);
 			name = OllamaModelsTests;
-			packageProductDependencies = (
-			);
 			productName = OllamaModelsTests;
 			productReference = 445370B08E886010EF0C9CC3 /* OllamaModelsTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -148,11 +146,7 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = OllamaModels;
-			packageProductDependencies = (
-			);
 			productName = OllamaModels;
 			productReference = 17F0A16C5F060A5215028AEF /* OllamaModels.app */;
 			productType = "com.apple.product-type.application";
@@ -175,7 +169,7 @@
 			);
 			mainGroup = 263C1CA841669D37EB890E1A;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 110;
 			productRefGroup = F7B8FB9108AAD19A65320276 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -189,18 +183,15 @@
 /* Begin PBXResourcesBuildPhase section */
 		6CCD58483056CD206B1AE3C3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				7B9CA795D9654CDB5DF8FAA8 /* Assets.xcassets in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3AEDC48F226F84A4D2CA714B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				ED760D60AED0BF063F321615 /* BenchmarkComparison.swift in Sources */,
 				70744667C9D1B95754676C85 /* BenchmarkExporter.swift in Sources */,
@@ -218,17 +209,14 @@
 				99A8057085B5A48485D7B909 /* OllamaModelsApp.swift in Sources */,
 				C35D0D2D9CB573B7174117D4 /* OllamaTypes.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E0A9F33544B561D3BC89EB19 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				B6F0D93C1C2B811AFCD6EB0A /* BenchmarkFeatureTests.swift in Sources */,
 				AF253904585786870273B10E /* ModelDoctorTests.swift in Sources */,
 				150C08D03E9CBBA9E5F5E1D8 /* OllamaModelsTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -241,7 +229,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		3BA76488FB8008E4212562D7 /* Release */ = {
+		3BA76488FB8008E4212562D7 /* Release configuration for PBXNativeTarget "OllamaModelsTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -260,7 +248,7 @@
 			};
 			name = Release;
 		};
-		40ACF3AF35DE8F52BC8C8D8D /* Release */ = {
+		40ACF3AF35DE8F52BC8C8D8D /* Release configuration for PBXNativeTarget "OllamaModels" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -282,7 +270,7 @@
 			};
 			name = Release;
 		};
-		513AB2DCB1AABE15B1762248 /* Debug */ = {
+		513AB2DCB1AABE15B1762248 /* Debug configuration for PBXNativeTarget "OllamaModelsTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -301,7 +289,7 @@
 			};
 			name = Debug;
 		};
-		621EC962B3C634763990E41D /* Debug */ = {
+		621EC962B3C634763990E41D /* Debug configuration for PBXNativeTarget "OllamaModels" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -323,7 +311,7 @@
 			};
 			name = Debug;
 		};
-		B21D588DCC6658C334F463EA /* Release */ = {
+		B21D588DCC6658C334F463EA /* Release configuration for PBXProject "OllamaModels" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -384,7 +372,7 @@
 			};
 			name = Release;
 		};
-		CFA5921735EF0ED21D15385A /* Debug */ = {
+		CFA5921735EF0ED21D15385A /* Debug configuration for PBXProject "OllamaModels" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -458,28 +446,25 @@
 		2B97BD36620B496D0B7E9838 /* Build configuration list for PBXNativeTarget "OllamaModels" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				621EC962B3C634763990E41D /* Debug */,
-				40ACF3AF35DE8F52BC8C8D8D /* Release */,
+				621EC962B3C634763990E41D /* Debug configuration for PBXNativeTarget "OllamaModels" */,
+				40ACF3AF35DE8F52BC8C8D8D /* Release configuration for PBXNativeTarget "OllamaModels" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 		6CD1E5352361739A4D34F1AA /* Build configuration list for PBXNativeTarget "OllamaModelsTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				513AB2DCB1AABE15B1762248 /* Debug */,
-				3BA76488FB8008E4212562D7 /* Release */,
+				513AB2DCB1AABE15B1762248 /* Debug configuration for PBXNativeTarget "OllamaModelsTests" */,
+				3BA76488FB8008E4212562D7 /* Release configuration for PBXNativeTarget "OllamaModelsTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 		B4D23C01AF503F5A0BF14875 /* Build configuration list for PBXProject "OllamaModels" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				CFA5921735EF0ED21D15385A /* Debug */,
-				B21D588DCC6658C334F463EA /* Release */,
+				CFA5921735EF0ED21D15385A /* Debug configuration for PBXProject "OllamaModels" */,
+				B21D588DCC6658C334F463EA /* Release configuration for PBXProject "OllamaModels" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
