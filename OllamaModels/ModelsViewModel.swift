@@ -1,6 +1,38 @@
 import Foundation
 import Observation
 
+struct PullProgressUpdateGate {
+    private let minimumInterval: Duration
+    private var lastPublishedAt: ContinuousClock.Instant?
+    private var lastStatus: String?
+
+    init(minimumInterval: Duration = .milliseconds(125)) {
+        self.minimumInterval = minimumInterval
+    }
+
+    mutating func shouldPublish(
+        status: String,
+        isTerminal: Bool = false,
+        now: ContinuousClock.Instant
+    ) -> Bool {
+        let statusChanged = status != lastStatus
+        let intervalElapsed = lastPublishedAt.map {
+            $0.advanced(by: minimumInterval) <= now
+        } ?? true
+        guard statusChanged || isTerminal || intervalElapsed else { return false }
+
+        lastPublishedAt = now
+        lastStatus = status
+        return true
+    }
+}
+
+enum PullCancellationNotice {
+    static func message(for modelName: String) -> String {
+        "Stopped this app's request for \(modelName). Ollama may retain partial data and resume it later."
+    }
+}
+
 @MainActor
 @Observable
 final class ModelsViewModel {
@@ -98,6 +130,7 @@ final class ModelsViewModel {
 
     func cancelPull() {
         guard activePull != nil else { return }
+        activePull?.status = "Stopping request…"
         operationTask?.cancel()
     }
 
@@ -148,12 +181,27 @@ final class ModelsViewModel {
             operationTask = nil
         }
 
+        let clock = ContinuousClock()
+        var progressGate = PullProgressUpdateGate()
+
         do {
             for try await event in client.pullModel(named: name) {
                 try Task.checkCancellation()
-                activePull?.status = event.status ?? "Downloading…"
-                activePull?.completed = event.completed
-                activePull?.total = event.total
+                let status = event.status ?? "Downloading…"
+                let isTerminal = if let completed = event.completed,
+                                    let total = event.total {
+                    total > 0 && completed >= total
+                } else {
+                    false
+                }
+
+                if progressGate.shouldPublish(
+                    status: status,
+                    isTerminal: isTerminal,
+                    now: clock.now
+                ) {
+                    updateActivePull(with: event, fallbackStatus: status)
+                }
             }
 
             try Task.checkCancellation()
@@ -161,9 +209,24 @@ final class ModelsViewModel {
             lastUpdated = Date()
             noticeMessage = "Added \(name)."
         } catch is CancellationError {
-            noticeMessage = "Stopped adding \(name)."
+            noticeMessage = PullCancellationNotice.message(for: name)
+        } catch where Task.isCancelled {
+            // listModels() normalizes URLSession cancellation into OllamaClientError,
+            // so preserve cancellation semantics when a stop races this refresh.
+            noticeMessage = PullCancellationNotice.message(for: name)
         } catch {
             errorMessage = message(for: error)
+        }
+    }
+
+    private func updateActivePull(with event: OllamaPullEvent, fallbackStatus: String) {
+        guard var nextPull = activePull else { return }
+        nextPull.status = fallbackStatus
+        nextPull.completed = event.completed
+        nextPull.total = event.total
+
+        if nextPull != activePull {
+            activePull = nextPull
         }
     }
 

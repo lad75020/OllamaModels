@@ -127,14 +127,15 @@ struct OllamaClient: Sendable {
     }
 
     func pullModel(named name: String) -> AsyncThrowingStream<OllamaPullEvent, Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
+        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let client = self
+            let task = Task.detached(priority: .userInitiated) {
                 do {
                     let body = try JSONEncoder().encode(
                         OllamaPullRequest(name: name, stream: true)
                     )
-                    let request = try makeRequest(path: "api/pull", method: "POST", body: body)
-                    let (bytes, response) = try await session.bytes(for: request)
+                    let request = try client.makeRequest(path: "api/pull", method: "POST", body: body)
+                    let (bytes, response) = try await client.session.bytes(for: request)
                     try await Self.validate(response, bytes: bytes)
 
                     for try await line in bytes.lines {
@@ -152,6 +153,8 @@ struct OllamaClient: Sendable {
 
                     continuation.finish()
                 } catch is CancellationError {
+                    continuation.finish()
+                } catch let error as URLError where error.code == .cancelled {
                     continuation.finish()
                 } catch let error as OllamaClientError {
                     continuation.finish(throwing: error)

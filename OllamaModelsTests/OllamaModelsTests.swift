@@ -209,6 +209,62 @@ final class OllamaModelsTests: XCTestCase {
         XCTAssertNil(ModelNameValidator.normalized(String(repeating: "m", count: 201)))
     }
 
+    func testPullProgressUpdateGateThrottlesUnchangedStatus() {
+        let clock = ContinuousClock()
+        let start = clock.now
+        var gate = PullProgressUpdateGate(minimumInterval: .milliseconds(125))
+
+        XCTAssertTrue(gate.shouldPublish(status: "downloading", now: start))
+        XCTAssertFalse(
+            gate.shouldPublish(
+                status: "downloading",
+                now: start.advanced(by: .milliseconds(124))
+            )
+        )
+        XCTAssertTrue(
+            gate.shouldPublish(
+                status: "downloading",
+                now: start.advanced(by: .milliseconds(125))
+            )
+        )
+    }
+
+    func testPullProgressUpdateGatePublishesStatusTransitionsImmediately() {
+        let clock = ContinuousClock()
+        let start = clock.now
+        var gate = PullProgressUpdateGate(minimumInterval: .seconds(1))
+
+        XCTAssertTrue(gate.shouldPublish(status: "downloading", now: start))
+        XCTAssertTrue(
+            gate.shouldPublish(
+                status: "verifying sha256 digest",
+                now: start.advanced(by: .milliseconds(1))
+            )
+        )
+    }
+
+    func testPullProgressUpdateGatePublishesCompletionImmediately() {
+        let clock = ContinuousClock()
+        let start = clock.now
+        var gate = PullProgressUpdateGate(minimumInterval: .seconds(1))
+
+        XCTAssertTrue(gate.shouldPublish(status: "downloading", now: start))
+        XCTAssertTrue(
+            gate.shouldPublish(
+                status: "downloading",
+                isTerminal: true,
+                now: start.advanced(by: .milliseconds(1))
+            )
+        )
+    }
+
+    func testPullCancellationNoticeDoesNotPromiseDaemonCancellation() {
+        XCTAssertEqual(
+            PullCancellationNotice.message(for: "gemma4:12b-mlx"),
+            "Stopped this app's request for gemma4:12b-mlx. Ollama may retain partial data and resume it later."
+        )
+    }
+
     func testLocalBenchmarkCandidateRejectsCloudAndEmbeddingModels() {
         let completionModel = OllamaModel(
             name: "qwen3:4b",

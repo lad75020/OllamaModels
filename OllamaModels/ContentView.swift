@@ -340,10 +340,11 @@ struct ContentView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Button("Stop") {
+                Button("Stop Request") {
                     viewModel.cancelPull()
                 }
                 .buttonStyle(.borderless)
+                .help("Stops this app's request. Ollama may retain partial data and resume it later.")
             } else if let deletingModelName = viewModel.deletingModelName {
                 ProgressView()
                     .controlSize(.small)
