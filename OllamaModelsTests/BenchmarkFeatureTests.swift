@@ -80,6 +80,54 @@ final class BenchmarkFeatureTests: XCTestCase {
         XCTAssertTrue(markdown.contains("qwen3:4b"))
     }
 
+    func testTestSetDecodesOrderedPromptsAndCorrectAnswers() throws {
+        let data = Data(
+            #"{"tests":[{"prompt":"What is 2 + 2?","correctAnswer":"4"},{"prompt":"Name the capital of France.","correctAnswer":"Paris"}]}"#
+                .utf8
+        )
+
+        let testSet = try BenchmarkTestSet.decode(data: data)
+
+        XCTAssertEqual(testSet.tests.map(\.prompt), ["What is 2 + 2?", "Name the capital of France."])
+        XCTAssertEqual(testSet.tests.map(\.correctAnswer), ["4", "Paris"])
+    }
+
+    @MainActor
+    func testQueueRunsImportedTestsInOrderAndRecordsCorrectness() async throws {
+        let executedPrompts = QueueEventLog()
+        let viewModel = BenchmarkViewModel { configuration, iteration in
+            await executedPrompts.append(configuration.prompt)
+            return BenchmarkSample(
+                modelName: configuration.modelName,
+                iteration: iteration,
+                startedAt: Date(timeIntervalSince1970: Double(iteration)),
+                timeToFirstTokenSeconds: 0.1,
+                totalDurationNanoseconds: 1_000_000_000,
+                loadDurationNanoseconds: 100_000_000,
+                promptEvaluationCount: 10,
+                promptEvaluationDurationNanoseconds: 500_000_000,
+                evaluationCount: 20,
+                evaluationDurationNanoseconds: 500_000_000,
+                response: configuration.prompt == "What is 2 + 2?" ? "4" : "Lyon"
+            )
+        }
+        viewModel.testSet = try BenchmarkTestSet.decode(
+            data: Data(
+                #"{"tests":[{"prompt":"What is 2 + 2?","correctAnswer":"4"},{"prompt":"Name the capital of France.","correctAnswer":"Paris"}]}"#
+                    .utf8
+            )
+        )
+        viewModel.iterations = 1
+
+        await viewModel.runQueue(
+            targets: [BenchmarkModelTarget(name: "model-a", digest: "digest-a")]
+        ) { _ in }
+
+        let recordedPrompts = await executedPrompts.recordedValues()
+        XCTAssertEqual(recordedPrompts, ["What is 2 + 2?", "Name the capital of France."])
+        XCTAssertEqual(viewModel.samples.map(\.isCorrect), [true, false])
+    }
+
     @MainActor
     func testQueueRunsModelsSequentiallyAndPersistsEachResult() async {
         let events = QueueEventLog()
@@ -196,5 +244,9 @@ private actor QueueEventLog {
 
     func append(_ value: String) {
         values.append(value)
+    }
+
+    func recordedValues() -> [String] {
+        values
     }
 }

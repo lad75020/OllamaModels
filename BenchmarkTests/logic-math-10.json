@@ -1,0 +1,44 @@
+{
+  "tests": [
+    {
+      "prompt": "Compute 37 × 14 − 85. Reply with only the integer.",
+      "correctAnswer": "433"
+    },
+    {
+      "prompt": "What is 2 raised to the 10th power? Reply with only the integer.",
+      "correctAnswer": "1024"
+    },
+    {
+      "prompt": "Compute three quarters of 240, then add 18. Reply with only the integer.",
+      "correctAnswer": "198"
+    },
+    {
+      "prompt": "Solve for x: 5x − 17 = 68. Reply with only the integer.",
+      "correctAnswer": "17"
+    },
+    {
+      "prompt": "An item costs 250. After a 12% discount, what is the final price? Reply with only the integer.",
+      "correctAnswer": "220"
+    },
+    {
+      "prompt": "Continue the sequence: 2, 6, 12, 20, 30, __. Reply with only the next integer.",
+      "correctAnswer": "42"
+    },
+    {
+      "prompt": "Five people each shake hands with every other person exactly once. How many handshakes occur? Reply with only the integer.",
+      "correctAnswer": "10"
+    },
+    {
+      "prompt": "All glims are torps. No torps are blue. Is the statement 'No glims are blue' logically entailed? Reply with only yes or no.",
+      "correctAnswer": "yes"
+    },
+    {
+      "prompt": "A red box is left of a green box. A blue box is right of the green box. Which box is in the middle? Reply with only red, green, or blue.",
+      "correctAnswer": "green"
+    },
+    {
+      "prompt": "If switch A is off, then switch B is on. Switch A is off. Is switch B on? Reply with only yes or no.",
+      "correctAnswer": "yes"
+    }
+  ]
+}

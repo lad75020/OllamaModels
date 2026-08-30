@@ -18,6 +18,7 @@ final class BenchmarkViewModel {
 
     var selectedModelName = ""
     var prompt = "Explain why deterministic benchmarks are useful in three concise sentences."
+    var testSet: BenchmarkTestSet?
     var iterations = 3
     var outputTokenLimit = 128
 
@@ -27,6 +28,8 @@ final class BenchmarkViewModel {
     private(set) var completedIterations = 0
     private(set) var totalIterations = 0
     private(set) var currentIteration = 0
+    private(set) var currentTestIndex = 0
+    private(set) var testCount = 0
     private(set) var currentModelName = ""
     private(set) var currentModelIndex = 0
     private(set) var totalModels = 0
@@ -128,6 +131,8 @@ final class BenchmarkViewModel {
         completedIterations = 0
         totalIterations = 0
         currentIteration = 0
+        currentTestIndex = 0
+        testCount = 0
         currentModelName = ""
         currentModelIndex = 0
         totalModels = 0
@@ -137,7 +142,7 @@ final class BenchmarkViewModel {
 
     private struct PreparedQueue {
         let targets: [BenchmarkModelTarget]
-        let prompt: String
+        let tests: [BenchmarkTestCase]
         let iterations: Int
         let outputTokenLimit: Int
     }
@@ -157,10 +162,16 @@ final class BenchmarkViewModel {
             return nil
         }
 
-        let normalizedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedPrompt.isEmpty else {
-            errorMessage = "Enter a benchmark prompt."
-            return nil
+        let tests: [BenchmarkTestCase]
+        if let testSet {
+            tests = testSet.tests
+        } else {
+            let normalizedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !normalizedPrompt.isEmpty else {
+                errorMessage = "Enter a benchmark prompt."
+                return nil
+            }
+            tests = [BenchmarkTestCase(prompt: normalizedPrompt, correctAnswer: "")]
         }
 
         let iterationCount = min(max(iterations, 1), 10)
@@ -169,8 +180,10 @@ final class BenchmarkViewModel {
         samples = []
         completedSessions = []
         completedIterations = 0
-        totalIterations = normalizedTargets.count * iterationCount
+        totalIterations = normalizedTargets.count * iterationCount * tests.count
         currentIteration = 0
+        currentTestIndex = 0
+        testCount = tests.count
         currentModelName = ""
         currentModelIndex = 0
         totalModels = normalizedTargets.count
@@ -180,7 +193,7 @@ final class BenchmarkViewModel {
 
         return PreparedQueue(
             targets: normalizedTargets,
-            prompt: normalizedPrompt,
+            tests: tests,
             iterations: iterationCount,
             outputTokenLimit: outputTokenLimit
         )
@@ -194,6 +207,7 @@ final class BenchmarkViewModel {
             isRunning = false
             benchmarkTask = nil
             currentIteration = 0
+            currentTestIndex = 0
         }
 
         let ollamaVersion = (try? await fetchOllamaVersion()) ?? "Unknown"
@@ -217,17 +231,22 @@ final class BenchmarkViewModel {
                 try Task.checkCancellation()
                 try await unloadAllModels()
 
-                for iteration in 1...prepared.iterations {
-                    try Task.checkCancellation()
-                    currentIteration = iteration
-                    let configuration = BenchmarkConfiguration(
-                        modelName: target.name,
-                        prompt: prepared.prompt,
-                        outputTokenLimit: prepared.outputTokenLimit
-                    )
-                    let sample = try await executor(configuration, iteration)
-                    samples.append(sample)
-                    completedIterations += 1
+                var runNumber = 0
+                for _ in 1...prepared.iterations {
+                    for (testOffset, test) in prepared.tests.enumerated() {
+                        try Task.checkCancellation()
+                        runNumber += 1
+                        currentIteration = runNumber
+                        currentTestIndex = testOffset + 1
+                        let configuration = BenchmarkConfiguration(
+                            modelName: target.name,
+                            prompt: test.prompt,
+                            outputTokenLimit: prepared.outputTokenLimit
+                        )
+                        let sample = try await executor(configuration, runNumber)
+                        samples.append(sample.evaluated(using: test))
+                        completedIterations += 1
+                    }
                 }
 
                 let snapshot = makeSnapshot(
@@ -293,7 +312,7 @@ final class BenchmarkViewModel {
             status: status,
             modelName: target.name,
             modelDigest: target.digest,
-            prompt: prepared.prompt,
+            prompt: prepared.tests.map(\.prompt).joined(separator: "\n\n"),
             outputTokenLimit: prepared.outputTokenLimit,
             iterationsRequested: prepared.iterations,
             temperature: 0,

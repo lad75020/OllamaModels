@@ -1,5 +1,83 @@
 import Foundation
 
+enum BenchmarkTestSetError: LocalizedError, Equatable {
+    case noTests
+    case blankPrompt(index: Int)
+    case blankCorrectAnswer(index: Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .noTests:
+            "The JSON file must contain at least one test."
+        case let .blankPrompt(index):
+            "Test \(index) must include a prompt."
+        case let .blankCorrectAnswer(index):
+            "Test \(index) must include a correctAnswer."
+        }
+    }
+}
+
+struct BenchmarkTestCase: Identifiable, Equatable, Sendable {
+    let id: UUID
+    let prompt: String
+    let correctAnswer: String
+
+    init(id: UUID = UUID(), prompt: String, correctAnswer: String) {
+        self.id = id
+        self.prompt = prompt
+        self.correctAnswer = correctAnswer
+    }
+
+    func matches(response: String) -> Bool {
+        Self.normalized(response) == Self.normalized(correctAnswer)
+    }
+
+    private static func normalized(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+    }
+}
+
+struct BenchmarkTestSet: Decodable, Equatable, Sendable {
+    let tests: [BenchmarkTestCase]
+
+    static func decode(data: Data) throws -> BenchmarkTestSet {
+        try JSONDecoder().decode(Self.self, from: data)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tests
+    }
+
+    private struct RawTestCase: Decodable {
+        let prompt: String
+        let correctAnswer: String
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let rawTests = try container.decode([RawTestCase].self, forKey: .tests)
+        guard !rawTests.isEmpty else {
+            throw BenchmarkTestSetError.noTests
+        }
+
+        tests = try rawTests.enumerated().map { offset, rawTest in
+            let prompt = rawTest.prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !prompt.isEmpty else {
+                throw BenchmarkTestSetError.blankPrompt(index: offset + 1)
+            }
+
+            let correctAnswer = rawTest.correctAnswer.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !correctAnswer.isEmpty else {
+                throw BenchmarkTestSetError.blankCorrectAnswer(index: offset + 1)
+            }
+
+            return BenchmarkTestCase(prompt: prompt, correctAnswer: correctAnswer)
+        }
+    }
+}
+
 struct BenchmarkConfiguration: Equatable, Sendable {
     let modelName: String
     let prompt: String
@@ -80,6 +158,10 @@ struct BenchmarkSample: Identifiable, Codable, Equatable, Sendable {
     let promptEvaluationDurationNanoseconds: Int64
     let evaluationCount: Int
     let evaluationDurationNanoseconds: Int64
+    let prompt: String
+    let correctAnswer: String?
+    let response: String
+    let isCorrect: Bool?
 
     init(
         id: UUID = UUID(),
@@ -93,7 +175,11 @@ struct BenchmarkSample: Identifiable, Codable, Equatable, Sendable {
         promptEvaluationCount: Int,
         promptEvaluationDurationNanoseconds: Int64,
         evaluationCount: Int,
-        evaluationDurationNanoseconds: Int64
+        evaluationDurationNanoseconds: Int64,
+        prompt: String = "",
+        correctAnswer: String? = nil,
+        response: String = "",
+        isCorrect: Bool? = nil
     ) {
         self.id = id
         self.modelName = modelName
@@ -107,6 +193,31 @@ struct BenchmarkSample: Identifiable, Codable, Equatable, Sendable {
         self.promptEvaluationDurationNanoseconds = max(promptEvaluationDurationNanoseconds, 0)
         self.evaluationCount = max(evaluationCount, 0)
         self.evaluationDurationNanoseconds = max(evaluationDurationNanoseconds, 0)
+        self.prompt = prompt
+        self.correctAnswer = correctAnswer
+        self.response = response
+        self.isCorrect = isCorrect
+    }
+
+    func evaluated(using test: BenchmarkTestCase) -> BenchmarkSample {
+        BenchmarkSample(
+            id: id,
+            modelName: modelName,
+            iteration: iteration,
+            runKind: runKind,
+            startedAt: startedAt,
+            timeToFirstTokenSeconds: timeToFirstTokenSeconds,
+            totalDurationNanoseconds: totalDurationNanoseconds,
+            loadDurationNanoseconds: loadDurationNanoseconds,
+            promptEvaluationCount: promptEvaluationCount,
+            promptEvaluationDurationNanoseconds: promptEvaluationDurationNanoseconds,
+            evaluationCount: evaluationCount,
+            evaluationDurationNanoseconds: evaluationDurationNanoseconds,
+            prompt: test.prompt,
+            correctAnswer: test.correctAnswer,
+            response: response,
+            isCorrect: test.matches(response: response)
+        )
     }
 
     var totalDurationSeconds: Double {

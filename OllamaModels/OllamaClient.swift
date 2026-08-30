@@ -202,6 +202,7 @@ struct OllamaClient: Sendable {
 
             var firstTokenSeconds: Double?
             var finalEvent: OllamaGenerateEvent?
+            var responseText = ""
 
             for try await line in bytes.lines {
                 try Task.checkCancellation()
@@ -218,6 +219,7 @@ struct OllamaClient: Sendable {
                 if firstTokenSeconds == nil, hasOutput {
                     firstTokenSeconds = Self.seconds(from: started.duration(to: clock.now))
                 }
+                responseText += event.response ?? ""
 
                 if event.done {
                     finalEvent = event
@@ -240,7 +242,9 @@ struct OllamaClient: Sendable {
                 promptEvaluationCount: finalEvent.promptEvaluationCount ?? 0,
                 promptEvaluationDurationNanoseconds: finalEvent.promptEvaluationDurationNanoseconds ?? 0,
                 evaluationCount: finalEvent.evaluationCount ?? 0,
-                evaluationDurationNanoseconds: finalEvent.evaluationDurationNanoseconds ?? 0
+                evaluationDurationNanoseconds: finalEvent.evaluationDurationNanoseconds ?? 0,
+                prompt: configuration.prompt,
+                response: responseText
             )
         } catch is CancellationError {
             throw CancellationError()

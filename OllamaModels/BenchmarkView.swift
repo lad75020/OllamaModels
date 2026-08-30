@@ -1,11 +1,13 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 @MainActor
 struct BenchmarkView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var viewModel: BenchmarkViewModel
     @State private var selectedModelNames: Set<String> = []
+    @State private var isImportingTestSet = false
     let installedModels: [OllamaModel]
     let loadedModelNames: [String]
 
@@ -63,6 +65,17 @@ struct BenchmarkView: View {
         .onAppear(perform: synchronizeModelSelection)
         .onChange(of: completionModels.map(\.name)) {
             synchronizeModelSelection()
+        }
+        .fileImporter(
+            isPresented: $isImportingTestSet,
+            allowedContentTypes: [.json]
+        ) { result in
+            switch result {
+            case let .success(url):
+                loadTestSet(from: url)
+            case let .failure(error):
+                viewModel.errorMessage = "Could not choose the JSON test file: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -144,7 +157,7 @@ struct BenchmarkView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Runs")
+                        Text("Cycles")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Stepper(
@@ -173,22 +186,7 @@ struct BenchmarkView: View {
                     Spacer()
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Prompt")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextEditor(text: $viewModel.prompt)
-                        .font(.body)
-                        .scrollContentBackground(.hidden)
-                        .padding(6)
-                        .frame(minHeight: 76, maxHeight: 110)
-                        .background(.background, in: RoundedRectangle(cornerRadius: 6))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(.separator, lineWidth: 1)
-                        }
-                        .disabled(viewModel.isRunning)
-                }
+                testSetSection
 
                 HStack(spacing: 10) {
                     if viewModel.isRunning {
@@ -227,6 +225,43 @@ struct BenchmarkView: View {
                 .foregroundStyle(.secondary)
             }
             .padding(8)
+        }
+    }
+
+    private var testSetSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Tests")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Load Test JSON…", systemImage: "doc.badge.plus") {
+                    isImportingTestSet = true
+                }
+                .disabled(viewModel.isRunning)
+                if viewModel.testSet != nil {
+                    Button("Remove", systemImage: "xmark") {
+                        viewModel.testSet = nil
+                    }
+                    .disabled(viewModel.isRunning)
+                }
+            }
+
+            if let testSet = viewModel.testSet {
+                BenchmarkTestSetTree(testSet: testSet)
+            } else {
+                ContentUnavailableView(
+                    "No JSON Test Set",
+                    systemImage: "curlybraces.square",
+                    description: Text("Load a file containing a tests array with prompt and correctAnswer values.")
+                )
+                .frame(maxWidth: .infinity, minHeight: 92)
+                .background(.background, in: RoundedRectangle(cornerRadius: 6))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(.separator, lineWidth: 1)
+                }
+            }
         }
     }
 
@@ -309,6 +344,11 @@ struct BenchmarkView: View {
                 }
                 .width(min: 40, ideal: 48, max: 60)
 
+                TableColumn("Correct") { sample in
+                    correctnessIndicator(for: sample)
+                }
+                .width(min: 58, ideal: 64, max: 72)
+
                 TableColumn("Kind") { sample in
                     Text(sample.runKind.label)
                         .foregroundStyle(sample.runKind == .cold ? .primary : .secondary)
@@ -360,7 +400,7 @@ struct BenchmarkView: View {
         ContentUnavailableView {
             Label("Ready to Benchmark", systemImage: "gauge.open.with.lines.needle.33percent")
         } description: {
-            Text("Run the same prompt several times to compare latency and token throughput.")
+            Text("Load a JSON test set to measure each prompt and validate its response.")
         }
         .frame(maxWidth: .infinity, minHeight: 190)
     }
@@ -391,12 +431,25 @@ struct BenchmarkView: View {
 
     private var canStart: Bool {
         !selectedModelNames.isEmpty
-            && !viewModel.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && viewModel.testSet != nil
             && !viewModel.isRunning
     }
 
     private var runningLabel: String {
-        "Model \(viewModel.currentModelIndex) of \(viewModel.totalModels) · Run \(viewModel.currentIteration) of \(viewModel.iterations) · \(viewModel.currentModelName)"
+        "Model \(viewModel.currentModelIndex) of \(viewModel.totalModels) · Test \(viewModel.currentTestIndex) of \(viewModel.testCount) · Run \(viewModel.currentIteration) · \(viewModel.currentModelName)"
+    }
+
+    @ViewBuilder
+    private func correctnessIndicator(for sample: BenchmarkSample) -> some View {
+        if let isCorrect = sample.isCorrect {
+            Image(systemName: isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundStyle(isCorrect ? .green : .red)
+                .accessibilityLabel(isCorrect ? "Correct" : "Incorrect")
+        } else {
+            Text("—")
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("No expected answer")
+        }
     }
 
     private func synchronizeModelSelection() {
@@ -433,9 +486,74 @@ struct BenchmarkView: View {
         }
     }
 
+    private func loadTestSet(from url: URL) {
+        let hasSecurityScopedAccess = url.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityScopedAccess {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            viewModel.testSet = try BenchmarkTestSet.decode(data: Data(contentsOf: url))
+            viewModel.errorMessage = nil
+        } catch {
+            viewModel.errorMessage = "Could not load the JSON test file: \(error.localizedDescription)"
+        }
+    }
+
     private func metric(_ value: Double, suffix: String) -> String {
         guard value.isFinite else { return "—" }
         return value.formatted(.number.precision(.fractionLength(value < 10 ? 2 : 1))) + suffix
+    }
+}
+
+private struct BenchmarkTestSetTree: View {
+    let testSet: BenchmarkTestSet
+    @State private var isExpanded = true
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(testSet.tests.enumerated()), id: \.element.id) { index, test in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("tests[\(index)]")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                            jsonField(key: "prompt", value: test.prompt)
+                            jsonField(key: "correctAnswer", value: test.correctAnswer)
+                        }
+                        .padding(.leading, 12)
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 4)
+            }
+            .frame(maxHeight: 130)
+        } label: {
+            Label("{ \"tests\": [\(testSet.tests.count)] }", systemImage: "curlybraces.square")
+                .font(.callout.monospaced())
+        }
+        .padding(8)
+        .background(.background, in: RoundedRectangle(cornerRadius: 6))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(.separator, lineWidth: 1)
+        }
+    }
+
+    private func jsonField(key: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("\"\(key)\":")
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+            Text("\"\(value)\"")
+                .font(.caption)
+                .lineLimit(1)
+                .textSelection(.enabled)
+        }
     }
 }
 
