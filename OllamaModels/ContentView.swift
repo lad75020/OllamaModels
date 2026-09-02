@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 private enum SidebarDestination: Hashable {
@@ -9,17 +10,23 @@ private enum SidebarDestination: Hashable {
 
 @MainActor
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \InferenceServerRecord.name) private var serverRecords: [InferenceServerRecord]
+
     @State private var viewModel: ModelsViewModel
     @State private var benchmarkViewModel: BenchmarkViewModel
     @State private var modelDoctorViewModel: ModelDoctorViewModel
+    @State private var serverHealthMonitor = ServerHealthMonitor()
     @State private var selectedDestination: SidebarDestination = .models
     @State private var filterText = ""
     @State private var showingAddModel = false
+    @State private var showingAddServer = false
     @State private var showingRemoveConfirmation = false
     @State private var modelToRemove: OllamaModel?
+    @State private var serverErrorMessage: String?
 
     private let loadsOnAppear: Bool
-    private let runtimePollInterval: Duration = .seconds(5)
+    private let pollInterval: Duration = .seconds(5)
 
     init(
         viewModel: ModelsViewModel = ModelsViewModel(),
@@ -41,20 +48,30 @@ struct ContentView: View {
         }
         .task {
             guard loadsOnAppear else { return }
-            await viewModel.refresh()
+            ensureDefaultServer()
+        }
+        .task(id: serverPollingKey) {
+            guard loadsOnAppear, let activeServer else { return }
+            configureActiveServer(activeServer)
+            await refresh(server: activeServer)
             while !Task.isCancelled {
                 do {
-                    try await Task.sleep(for: runtimePollInterval)
+                    try await Task.sleep(for: pollInterval)
                 } catch {
                     break
                 }
-                await viewModel.refreshRuntimeStatus()
+                await refresh(server: activeServer)
             }
         }
         .sheet(isPresented: $showingAddModel) {
             AddModelView { name in
                 showingAddModel = false
                 viewModel.startPull(named: name)
+            }
+        }
+        .sheet(isPresented: $showingAddServer) {
+            AddInferenceServerView { name, port in
+                addOpenAICompatibleServer(name: name, port: port)
             }
         }
         .confirmationDialog(
@@ -81,6 +98,105 @@ struct ContentView: View {
         }
     }
 
+    private var servers: [InferenceServer] {
+        serverRecords.map(\.server).sorted { lhs, rhs in
+            if lhs.kind != rhs.kind {
+                return lhs.kind == .ollama
+            }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    private var activeServer: InferenceServer? {
+        serverRecords.first(where: \.isActive)?.server ?? servers.first
+    }
+
+    private var serverPollingKey: String {
+        let serverKey = servers.map { "\($0.id.uuidString):\($0.port):\($0.kind.rawValue)" }
+            .joined(separator: "|")
+        return "\(activeServer?.id.uuidString ?? "")|\(serverKey)"
+    }
+
+    private func ensureDefaultServer() {
+        if serverRecords.isEmpty {
+            let server = InferenceServer.defaultOllama
+            modelContext.insert(InferenceServerRecord(server: server, isActive: true))
+        } else if !serverRecords.contains(where: \.isActive) {
+            let defaultServerID = InferenceServer.defaultOllama.id
+            let record = serverRecords.first(where: { $0.id == defaultServerID }) ?? serverRecords.first
+            record?.isActive = true
+        } else {
+            return
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            serverErrorMessage = "Could not save the default Ollama server: \(error.localizedDescription)"
+        }
+    }
+
+    private func addOpenAICompatibleServer(name: String, port: Int) {
+        guard InferenceServerValidator.isValid(port: port) else {
+            serverErrorMessage = "Enter a port from 1 through 65,535."
+            return
+        }
+        guard !servers.contains(where: { $0.port == port }) else {
+            serverErrorMessage = "A local server using port \(port) already exists."
+            return
+        }
+
+        let server = InferenceServer(
+            name: InferenceServerValidator.normalizedName(name, port: port),
+            port: port,
+            kind: .openAICompatible
+        )
+        for existingRecord in serverRecords {
+            existingRecord.isActive = false
+        }
+        let record = InferenceServerRecord(server: server, isActive: true)
+        modelContext.insert(record)
+        do {
+            try modelContext.save()
+            serverErrorMessage = nil
+            showingAddServer = false
+        } catch {
+            modelContext.delete(record)
+            serverErrorMessage = "Could not save the server: \(error.localizedDescription)"
+        }
+    }
+
+    private func activate(_ server: InferenceServer) {
+        guard !viewModel.isBusy, !benchmarkViewModel.isRunning, !modelDoctorViewModel.isRunning else { return }
+        for record in serverRecords {
+            record.isActive = record.id == server.id
+        }
+        do {
+            try modelContext.save()
+        } catch {
+            serverErrorMessage = "Could not select the server: \(error.localizedDescription)"
+            return
+        }
+        configureActiveServer(server)
+    }
+
+    private func configureActiveServer(_ server: InferenceServer) {
+        let client = OllamaClient(server: server)
+        viewModel.configure(client: client)
+        benchmarkViewModel.configure(client: client)
+        modelDoctorViewModel.configure(client: client)
+    }
+
+    private func refresh(server: InferenceServer) async {
+        await serverHealthMonitor.refresh(servers: servers)
+        guard activeServer?.id == server.id else { return }
+        if viewModel.lastUpdated == nil {
+            await viewModel.refresh()
+        } else {
+            await viewModel.refreshRuntimeStatus()
+        }
+    }
+
     private var sidebar: some View {
         List(selection: $selectedDestination) {
             Section("Workspace") {
@@ -94,19 +210,40 @@ struct ContentView: View {
                     .tag(SidebarDestination.history)
             }
 
-            Section("Connection") {
-                Label {
-                    Text("Ollama API")
-                } icon: {
-                    Image(systemName: "circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.system(size: 8))
+            Section("Servers") {
+                ForEach(servers) { server in
+                    Button {
+                        activate(server)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(server.name)
+                                .font(.callout.weight(server.id == activeServer?.id ? .semibold : .regular))
+                            HStack(spacing: 5) {
+                                Image(systemName: "circle.fill")
+                                    .font(.system(size: 8))
+                                    .foregroundStyle(serverHealthMonitor.isReachable(server) ? .green : .red)
+                                    .accessibilityLabel(
+                                        serverHealthMonitor.isReachable(server)
+                                            ? "Server is reachable"
+                                            : "Server is unavailable"
+                                    )
+                                Text(server.endpointDescription)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.isBusy || benchmarkViewModel.isRunning || modelDoctorViewModel.isRunning)
+                    .accessibilityLabel("Select \(server.name) at \(server.endpointDescription)")
+                    .accessibilityValue(server.id == activeServer?.id ? "Active" : "Inactive")
                 }
 
-                Text(viewModel.endpointDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
+                Button("Add OpenAI-compatible Server", systemImage: "plus") {
+                    showingAddServer = true
+                }
+                .disabled(viewModel.isBusy || benchmarkViewModel.isRunning || modelDoctorViewModel.isRunning)
             }
 
             Section("Runtime") {
@@ -166,6 +303,15 @@ struct ContentView: View {
                 )
             }
 
+            if let serverErrorMessage {
+                messageBanner(
+                    text: serverErrorMessage,
+                    systemImage: "exclamationmark.triangle.fill",
+                    tint: .red,
+                    dismiss: { self.serverErrorMessage = nil }
+                )
+            }
+
             if let noticeMessage = viewModel.noticeMessage {
                 messageBanner(
                     text: noticeMessage,
@@ -195,7 +341,11 @@ struct ContentView: View {
                 Button("Unload", systemImage: "eject") {
                     Task { await viewModel.unloadAllModels() }
                 }
-                .disabled(viewModel.isBusy || viewModel.runtimeStatus.models.isEmpty)
+                .disabled(
+                    viewModel.isBusy
+                        || viewModel.runtimeStatus.models.isEmpty
+                        || !viewModel.supportsNativeModelManagement
+                )
                 .help("Unload all models currently loaded in Ollama")
             }
 
@@ -204,8 +354,12 @@ struct ContentView: View {
                     showingAddModel = true
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(viewModel.isBusy)
-                .help("Pull a model into Ollama")
+                .disabled(viewModel.isBusy || !viewModel.supportsNativeModelManagement)
+                .help(
+                    viewModel.supportsNativeModelManagement
+                        ? "Pull a model into Ollama"
+                        : "Model installation is managed by the selected server."
+                )
             }
         }
         .frame(minWidth: 760, minHeight: 480)
@@ -298,8 +452,12 @@ struct ContentView: View {
                     }
                     .labelStyle(.iconOnly)
                     .buttonStyle(.borderless)
-                    .disabled(viewModel.isBusy)
-                    .help("Remove \(model.name)")
+                    .disabled(viewModel.isBusy || !viewModel.supportsNativeModelManagement)
+                    .help(
+                        viewModel.supportsNativeModelManagement
+                            ? "Remove \(model.name)"
+                            : "Model removal is managed by the selected server."
+                    )
                 }
                 .width(min: 60)
             }
@@ -323,7 +481,7 @@ struct ContentView: View {
                 showingAddModel = true
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.isBusy)
+            .disabled(viewModel.isBusy || !viewModel.supportsNativeModelManagement)
         }
         .padding()
     }
@@ -497,6 +655,64 @@ private struct AddModelView: View {
     private func submit() {
         guard isValid else { return }
         onAdd(modelName)
+    }
+}
+
+@MainActor
+private struct AddInferenceServerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var portText = ""
+
+    let onAdd: (String, Int) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Add Local OpenAI-compatible Server")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Text("The server must be running on this Mac and expose /v1/models and /v1/chat/completions.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            TextField("Name (optional)", text: $name)
+                .textFieldStyle(.roundedBorder)
+                .autocorrectionDisabled()
+
+            TextField("Port", text: $portText)
+                .textFieldStyle(.roundedBorder)
+                .autocorrectionDisabled()
+                .onSubmit(submit)
+
+            HStack {
+                Spacer()
+                Button("Cancel", role: .cancel) {
+                    dismiss()
+                }
+                Button("Add Server") {
+                    submit()
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(port == nil)
+            }
+        }
+        .padding(24)
+        .frame(width: 460)
+    }
+
+    private var port: Int? {
+        guard let port = Int(portText), InferenceServerValidator.isValid(port: port) else {
+            return nil
+        }
+        return port
+    }
+
+    private func submit() {
+        guard let port else { return }
+        onAdd(name, port)
     }
 }
 

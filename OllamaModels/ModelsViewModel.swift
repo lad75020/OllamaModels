@@ -38,8 +38,8 @@ enum PullCancellationNotice {
 final class ModelsViewModel {
     typealias Unloader = @Sendable () async throws -> Void
 
-    private let client: OllamaClient
-    private let unloader: Unloader
+    private var client: OllamaClient
+    private var unloader: Unloader
     private var operationTask: Task<Void, Never>?
 
     private(set) var models: [OllamaModel]
@@ -55,6 +55,10 @@ final class ModelsViewModel {
 
     var endpointDescription: String {
         client.baseURL.absoluteString
+    }
+
+    var supportsNativeModelManagement: Bool {
+        client.supportsNativeModelManagement
     }
 
     var isBusy: Bool {
@@ -109,6 +113,18 @@ final class ModelsViewModel {
             // Runtime status is best-effort. Preserve the last successful value
             // and avoid repeating banners when background polling is unavailable.
         }
+    }
+
+    func configure(client: OllamaClient) {
+        guard self.client.server != client.server, !isBusy else { return }
+        operationTask?.cancel()
+        self.client = client
+        unloader = { try await client.unloadAllModelsAndWait() }
+        models = []
+        runtimeStatus = .empty
+        lastUpdated = nil
+        errorMessage = nil
+        noticeMessage = nil
     }
 
     func startPull(named rawName: String) {

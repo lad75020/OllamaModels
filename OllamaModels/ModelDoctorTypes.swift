@@ -101,6 +101,21 @@ struct ModelDoctorProfile: Equatable, Sendable {
         let result = lhs.addingReportingOverflow(rhs)
         return result.overflow ? Int64.max : result.partialValue
     }
+
+    static func openAICompatibleFallback(for model: OllamaModel) -> ModelDoctorProfile {
+        ModelDoctorProfile(
+            name: model.name,
+            family: model.family == "—" ? "Unknown" : model.family,
+            quantization: model.quantization == "—" ? "Unknown" : model.quantization,
+            fileSizeBytes: max(model.size, 0),
+            parameterCount: 0,
+            maximumContextSize: 4_096,
+            blockCount: 0,
+            embeddingLength: 0,
+            attentionHeadCount: 1,
+            keyValueHeadCount: 1
+        )
+    }
 }
 
 struct ModelDoctorHostSnapshot: Equatable, Sendable {

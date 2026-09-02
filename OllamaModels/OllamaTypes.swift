@@ -17,7 +17,7 @@ struct OllamaModel: Decodable, Identifiable, Hashable, Sendable {
     var supportsLocalBenchmark: Bool {
         let normalizedName = name.lowercased()
         return supportsCompletion
-            && size >= 1_000_000
+            && (size == 0 || size >= 1_000_000)
             && !normalizedName.contains("embed")
     }
 
@@ -290,6 +290,101 @@ struct OllamaUnloadRequest: Encodable, Sendable {
 
 struct OllamaVersionResponse: Decodable, Sendable {
     let version: String
+}
+
+struct OpenAIModelsResponse: Decodable, Sendable {
+    let data: [OpenAIModel]
+}
+
+struct OpenAIModel: Decodable, Sendable {
+    let id: String
+    let created: Int?
+
+    func asOllamaModel() -> OllamaModel {
+        OllamaModel(
+            name: id,
+            modifiedAt: created.map { ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: Double($0))) },
+            size: 0,
+            digest: "",
+            details: nil
+        )
+    }
+}
+
+struct OpenAIChatCompletionRequest: Encodable, Sendable {
+    struct Message: Encodable, Sendable {
+        let role: String
+        let content: String
+    }
+
+    let model: String
+    let messages: [Message]
+    let stream: Bool
+    let temperature: Double
+    let seed: Int
+    let maxTokens: Int
+
+    init(model: String, messages: [Message], maxTokens: Int, stream: Bool) {
+        self.model = model
+        self.messages = messages
+        self.stream = stream
+        self.temperature = 0
+        self.seed = 42
+        self.maxTokens = maxTokens
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case model
+        case messages
+        case stream
+        case temperature
+        case seed
+        case maxTokens = "max_tokens"
+    }
+}
+
+struct OpenAIChatCompletionResponse: Decodable, Sendable {
+    struct Choice: Decodable, Sendable {
+        struct Message: Decodable, Sendable {
+            let content: String?
+        }
+
+        let message: Message
+    }
+
+    struct Usage: Decodable, Sendable {
+        let promptTokens: Int?
+        let completionTokens: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case promptTokens = "prompt_tokens"
+            case completionTokens = "completion_tokens"
+        }
+    }
+
+    let choices: [Choice]
+    let usage: Usage?
+}
+
+struct OpenAIChatCompletionStreamEvent: Decodable, Sendable {
+    struct Choice: Decodable, Sendable {
+        struct Delta: Decodable, Sendable {
+            let content: String?
+        }
+
+        let delta: Delta
+    }
+
+    let choices: [Choice]
+    let usage: OpenAIChatCompletionResponse.Usage?
+}
+
+struct OpenAIErrorPayload: Decodable, Sendable {
+    struct ErrorDetail: Decodable, Sendable {
+        let message: String?
+    }
+
+    let error: ErrorDetail?
 }
 
 struct OllamaPullEvent: Decodable, Sendable {

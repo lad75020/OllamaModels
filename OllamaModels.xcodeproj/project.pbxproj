@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		03727656ECB0EAA085A26723 /* BenchmarkPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805002DAE55A20E6A973063C /* BenchmarkPersistence.swift */; };
 		0ABB6167B755B35CA879788A /* BenchmarkTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D369B2997317D7078F9FAED /* BenchmarkTypes.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* InferenceServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5061728394A5B6C /* InferenceServer.swift */; };
 		150C08D03E9CBBA9E5F5E1D8 /* OllamaModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E1EA17E68FEC8A6C177AC11 /* OllamaModelsTests.swift */; };
 		17DF63B58840297AB256BAE5 /* BenchmarkHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5D73F8DBDCB291E1A688F8 /* BenchmarkHistoryView.swift */; };
 		251045F8EC77C1815B948955 /* ModelDoctorTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDBE20820DDF67063C0A2D8F /* ModelDoctorTypes.swift */; };
@@ -56,6 +57,7 @@
 		8AAE1F3113D35129FB747B85 /* BenchmarkComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkComparison.swift; sourceTree = "<group>"; };
 		8AB41946779EA45CA265E725 /* BenchmarkFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkFeatureTests.swift; sourceTree = "<group>"; };
 		90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkViewModel.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5061728394A5B6C /* InferenceServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceServer.swift; sourceTree = "<group>"; };
 		975F76FFD37F89BFB3E04452 /* OllamaTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaTypes.swift; sourceTree = "<group>"; };
 		B3D54624D64DA25B6FCE4677 /* ModelsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsViewModel.swift; sourceTree = "<group>"; };
 		C2B43007DCB759B449FC69E7 /* ModelDoctorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDoctorView.swift; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 				02F503EB8DF0B6BD27A91F32 /* BenchmarkView.swift */,
 				90D3E5BBCEA0786BF57C646E /* BenchmarkViewModel.swift */,
 				42A35008D47B45C5C9D28389 /* ContentView.swift */,
+				B1C2D3E4F5061728394A5B6C /* InferenceServer.swift */,
 				FDA9DCE03EA0A06C79B40822 /* Info.plist */,
 				EDBE20820DDF67063C0A2D8F /* ModelDoctorTypes.swift */,
 				C2B43007DCB759B449FC69E7 /* ModelDoctorView.swift */,
@@ -201,6 +204,7 @@
 				A4AD352EA3D1A56D4F6A84E1 /* BenchmarkView.swift in Sources */,
 				BD25E11BB1E98934A348713C /* BenchmarkViewModel.swift in Sources */,
 				2C48D07345F7EFA430A9D007 /* ContentView.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* InferenceServer.swift in Sources */,
 				251045F8EC77C1815B948955 /* ModelDoctorTypes.swift in Sources */,
 				5742586ED0D3C1C275679E70 /* ModelDoctorView.swift in Sources */,
 				73D0E581F74C2F0AEBAF1A54 /* ModelDoctorViewModel.swift in Sources */,

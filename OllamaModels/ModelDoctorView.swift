@@ -78,7 +78,7 @@ struct ModelDoctorView: View {
                         Text("Diagnosing \(viewModel.currentModelName)…")
                             .font(.headline)
                         Spacer()
-                        Text("This can briefly load the model and then releases it.")
+                        Text("This can briefly load the model; server residency behavior depends on the selected API.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -98,7 +98,7 @@ struct ModelDoctorView: View {
                     ContentUnavailableView {
                         Label("Ready for a Check-up", systemImage: "stethoscope")
                     } description: {
-                        Text("Choose a model and run a short probe. Model Doctor unloads resident models before and after each diagnosis.")
+                        Text("Choose a model and run a short probe through the selected local server.")
                     }
                     .frame(maxWidth: .infinity, minHeight: 210)
                 }
@@ -156,7 +156,7 @@ struct ModelDoctorView: View {
                 }
 
                 Label(
-                    "The probe temporarily unloads other Ollama models. Select a second installed variant to receive a keep/remove recommendation.",
+                    "Ollama probes unload resident models. OpenAI-compatible servers manage model residency independently.",
                     systemImage: "info.circle"
                 )
                 .font(.caption)

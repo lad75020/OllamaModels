@@ -1,5 +1,7 @@
 import Foundation
 
+typealias BenchmarkOutputHandler = @MainActor @Sendable (String) -> Void
+
 enum BenchmarkTestSetError: LocalizedError, Equatable {
     case noTests
     case blankPrompt(index: Int)

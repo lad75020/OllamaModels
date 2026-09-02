@@ -2,25 +2,53 @@ import Foundation
 
 struct OllamaClient: Sendable {
     let baseURL: URL
+    let server: InferenceServer
     private let session: URLSession
 
     init(baseURL: URL = OllamaClient.defaultBaseURL, session: URLSession = .shared) {
         self.baseURL = baseURL
+        self.server = InferenceServer(
+            id: InferenceServer.defaultOllamaID,
+            name: "Ollama",
+            port: baseURL.port ?? 11_434,
+            kind: .ollama
+        )
+        self.session = session
+    }
+
+    init(server: InferenceServer, session: URLSession = .shared) {
+        self.baseURL = server.baseURL
+        self.server = server
         self.session = session
     }
 
     static var defaultBaseURL: URL {
-        if let configuredHost = ProcessInfo.processInfo.environment["OLLAMA_HOST"],
-           let configuredURL = URL(string: configuredHost),
-           configuredURL.scheme != nil,
-           configuredURL.host != nil {
-            return configuredURL
-        }
+        InferenceServer.defaultOllama.baseURL
+    }
 
-        return URL(string: "http://127.0.0.1:11434")!
+    var supportsNativeModelManagement: Bool {
+        server.supportsNativeModelManagement
     }
 
     func listModels() async throws -> [OllamaModel] {
+        switch server.kind {
+        case .ollama:
+            return try await listOllamaModels()
+        case .openAICompatible:
+            return try await listOpenAIModels()
+        }
+    }
+
+    func isAvailable() async -> Bool {
+        do {
+            _ = try await listModels()
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func listOllamaModels() async throws -> [OllamaModel] {
         do {
             let request = try makeRequest(path: "api/tags")
             let (data, response) = try await session.data(for: request)
@@ -39,7 +67,29 @@ struct OllamaClient: Sendable {
         }
     }
 
+    private func listOpenAIModels() async throws -> [OllamaModel] {
+        do {
+            let request = try makeRequest(path: "v1/models")
+            let (data, response) = try await session.data(for: request)
+            try Self.validate(response, data: data)
+            let result = try JSONDecoder().decode(OpenAIModelsResponse.self, from: data)
+            return result.data.map { $0.asOllamaModel() }.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        } catch let error as OllamaClientError {
+            throw error
+        } catch let error as DecodingError {
+            throw OllamaClientError.decoding(error.localizedDescription)
+        } catch {
+            throw OllamaClientError.transport(error.localizedDescription)
+        }
+    }
+
     func modelDoctorProfile(for model: OllamaModel) async throws -> ModelDoctorProfile {
+        guard server.kind == .ollama else {
+            return ModelDoctorProfile.openAICompatibleFallback(for: model)
+        }
+
         do {
             let body = try JSONEncoder().encode(OllamaShowRequest(model: model.name))
             let request = try makeRequest(path: "api/show", method: "POST", body: body)
@@ -57,6 +107,10 @@ struct OllamaClient: Sendable {
     }
 
     func runtimeStatus() async throws -> OllamaRuntimeStatus {
+        guard server.kind == .ollama else {
+            return .empty
+        }
+
         do {
             let request = try makeRequest(path: "api/ps")
             let (data, response) = try await session.data(for: request)
@@ -74,6 +128,11 @@ struct OllamaClient: Sendable {
     }
 
     func version() async throws -> String {
+        guard server.kind == .ollama else {
+            _ = try await listOpenAIModels()
+            return "OpenAI-compatible"
+        }
+
         do {
             let request = try makeRequest(path: "api/version")
             let (data, response) = try await session.data(for: request)
@@ -92,6 +151,8 @@ struct OllamaClient: Sendable {
         timeout: Duration = .seconds(60),
         pollInterval: Duration = .milliseconds(250)
     ) async throws {
+        guard server.kind == .ollama else { return }
+
         let loadedModels = try await runtimeStatus().loadedModelNames
         for modelName in Set(loadedModels) {
             try Task.checkCancellation()
@@ -114,6 +175,12 @@ struct OllamaClient: Sendable {
     }
 
     func deleteModel(named name: String) async throws {
+        guard server.kind == .ollama else {
+            throw OllamaClientError.unsupportedOperation(
+                "Removing models is only available through Ollama's native API."
+            )
+        }
+
         do {
             let body = try JSONEncoder().encode(OllamaDeleteRequest(name: name))
             let request = try makeRequest(path: "api/delete", method: "DELETE", body: body)
@@ -127,7 +194,17 @@ struct OllamaClient: Sendable {
     }
 
     func pullModel(named name: String) -> AsyncThrowingStream<OllamaPullEvent, Error> {
-        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+        guard server.kind == .ollama else {
+            return AsyncThrowingStream { continuation in
+                continuation.finish(
+                    throwing: OllamaClientError.unsupportedOperation(
+                        "Adding models is only available through Ollama's native API."
+                    )
+                )
+            }
+        }
+
+        return AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let client = self
             let task = Task.detached(priority: .userInitiated) {
                 do {
@@ -177,8 +254,17 @@ struct OllamaClient: Sendable {
 
     func runBenchmark(
         configuration: BenchmarkConfiguration,
-        iteration: Int
+        iteration: Int,
+        onOutput: @escaping BenchmarkOutputHandler = { _ in }
     ) async throws -> BenchmarkSample {
+        guard server.kind == .ollama else {
+            return try await runOpenAIBenchmark(
+                configuration: configuration,
+                iteration: iteration,
+                onOutput: onOutput
+            )
+        }
+
         do {
             let body = try JSONEncoder().encode(
                 OllamaGenerateRequest(
@@ -219,7 +305,11 @@ struct OllamaClient: Sendable {
                 if firstTokenSeconds == nil, hasOutput {
                     firstTokenSeconds = Self.seconds(from: started.duration(to: clock.now))
                 }
-                responseText += event.response ?? ""
+                let output = event.response ?? ""
+                responseText += output
+                if !output.isEmpty {
+                    await onOutput(output)
+                }
 
                 if event.done {
                     finalEvent = event
@@ -243,6 +333,103 @@ struct OllamaClient: Sendable {
                 promptEvaluationDurationNanoseconds: finalEvent.promptEvaluationDurationNanoseconds ?? 0,
                 evaluationCount: finalEvent.evaluationCount ?? 0,
                 evaluationDurationNanoseconds: finalEvent.evaluationDurationNanoseconds ?? 0,
+                prompt: configuration.prompt,
+                response: responseText
+            )
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let error as URLError where error.code == .cancelled {
+            throw CancellationError()
+        } catch let error as OllamaClientError {
+            throw error
+        } catch let error as DecodingError {
+            throw OllamaClientError.decoding(error.localizedDescription)
+        } catch {
+            throw OllamaClientError.transport(error.localizedDescription)
+        }
+    }
+
+    private func runOpenAIBenchmark(
+        configuration: BenchmarkConfiguration,
+        iteration: Int,
+        onOutput: @escaping BenchmarkOutputHandler
+    ) async throws -> BenchmarkSample {
+        do {
+            let body = try JSONEncoder().encode(
+                OpenAIChatCompletionRequest(
+                    model: configuration.modelName,
+                    messages: [.init(role: "user", content: configuration.prompt)],
+                    maxTokens: configuration.outputTokenLimit,
+                    stream: true
+                )
+            )
+            let request = try makeRequest(path: "v1/chat/completions", method: "POST", body: body)
+            let clock = ContinuousClock()
+            let startedAt = Date()
+            let started = clock.now
+            let (bytes, response) = try await session.bytes(for: request)
+            try await Self.validate(response, bytes: bytes)
+
+            var firstTokenSeconds: Double?
+            var responseText = ""
+            var usage: OpenAIChatCompletionResponse.Usage?
+
+            for try await line in bytes.lines {
+                try Task.checkCancellation()
+                let payload = line.hasPrefix("data:")
+                    ? String(line.dropFirst("data:".count)).trimmingCharacters(in: .whitespaces)
+                    : line
+                guard !payload.isEmpty, payload != "[DONE]", let data = payload.data(using: .utf8) else {
+                    continue
+                }
+
+                if let event = try? JSONDecoder().decode(OpenAIChatCompletionStreamEvent.self, from: data) {
+                    usage = event.usage ?? usage
+                    let output = event.choices.compactMap(\.delta.content).joined()
+                    guard !output.isEmpty else { continue }
+                    if firstTokenSeconds == nil {
+                        firstTokenSeconds = Self.seconds(from: started.duration(to: clock.now))
+                    }
+                    responseText += output
+                    await onOutput(output)
+                    continue
+                }
+
+                if let completion = try? JSONDecoder().decode(OpenAIChatCompletionResponse.self, from: data),
+                   let output = completion.choices.first?.message.content {
+                    usage = completion.usage ?? usage
+                    if firstTokenSeconds == nil, !output.isEmpty {
+                        firstTokenSeconds = Self.seconds(from: started.duration(to: clock.now))
+                    }
+                    responseText += output
+                    if !output.isEmpty {
+                        await onOutput(output)
+                    }
+                    continue
+                }
+
+                throw OllamaClientError.decoding("The OpenAI-compatible server returned an invalid streaming event.")
+            }
+
+            guard !responseText.isEmpty else {
+                throw OllamaClientError.invalidResponse
+            }
+
+            let elapsedSeconds = Self.seconds(from: started.duration(to: clock.now))
+            let elapsedNanoseconds = Int64(clamping: Int64((elapsedSeconds * 1_000_000_000).rounded()))
+            let promptTokens = usage?.promptTokens ?? 0
+            let completionTokens = usage?.completionTokens ?? 0
+            return BenchmarkSample(
+                modelName: configuration.modelName,
+                iteration: max(iteration, 1),
+                startedAt: startedAt,
+                timeToFirstTokenSeconds: firstTokenSeconds ?? elapsedSeconds,
+                totalDurationNanoseconds: elapsedNanoseconds,
+                loadDurationNanoseconds: 0,
+                promptEvaluationCount: promptTokens,
+                promptEvaluationDurationNanoseconds: elapsedNanoseconds,
+                evaluationCount: completionTokens,
+                evaluationDurationNanoseconds: elapsedNanoseconds,
                 prompt: configuration.prompt,
                 response: responseText
             )
@@ -320,7 +507,13 @@ struct OllamaClient: Sendable {
            !payload.error.isEmpty {
             return .server(payload.error)
         }
-        return .server("Ollama returned HTTP \(statusCode).")
+        if let data,
+           let payload = try? JSONDecoder().decode(OpenAIErrorPayload.self, from: data),
+           let message = payload.error?.message,
+           !message.isEmpty {
+            return .server(message)
+        }
+        return .server("The local inference server returned HTTP \(statusCode).")
     }
 }
 
@@ -332,6 +525,7 @@ enum OllamaClientError: Error, LocalizedError, Equatable, Sendable {
     case invalidEndpoint
     case invalidResponse
     case server(String)
+    case unsupportedOperation(String)
     case decoding(String)
     case transport(String)
 
@@ -341,7 +535,7 @@ enum OllamaClientError: Error, LocalizedError, Equatable, Sendable {
             return "The Ollama endpoint is invalid."
         case .invalidResponse:
             return "Ollama returned an invalid response."
-        case .server(let message), .decoding(let message), .transport(let message):
+        case .server(let message), .unsupportedOperation(let message), .decoding(let message), .transport(let message):
             return message
         }
     }

@@ -2,6 +2,12 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
+enum BenchmarkRunReadiness {
+    static func canStart(selectedModelNames: Set<String>, isRunning: Bool) -> Bool {
+        !selectedModelNames.isEmpty && !isRunning
+    }
+}
+
 @MainActor
 struct BenchmarkView: View {
     @Environment(\.modelContext) private var modelContext
@@ -85,7 +91,7 @@ struct BenchmarkView: View {
                 Text("Benchmark Lab")
                     .font(.largeTitle)
                     .fontWeight(.semibold)
-                Text("Measure deterministic local inference performance through Ollama’s native API.")
+                Text("Measure deterministic local inference performance through the selected local server.")
                     .foregroundStyle(.secondary)
             }
 
@@ -108,6 +114,7 @@ struct BenchmarkView: View {
 
                 if viewModel.isRunning {
                     runningProgress
+                    liveOutput
                 }
 
                 if let summary = viewModel.summary {
@@ -218,7 +225,7 @@ struct BenchmarkView: View {
                 }
 
                 Label(
-                    "Selected models run sequentially. Ollama unloads every resident model before and after each queue item.",
+                    "Selected models run sequentially. Ollama unloads resident models; OpenAI-compatible servers manage residency themselves.",
                     systemImage: "memorychip"
                 )
                 .font(.caption)
@@ -280,6 +287,22 @@ struct BenchmarkView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(runningLabel)
         .accessibilityValue(viewModel.progress.formatted(.percent))
+    }
+
+    private var liveOutput: some View {
+        GroupBox("Live Model Output") {
+            ScrollView {
+                Text(viewModel.liveOutput.isEmpty ? "Waiting for model output…" : viewModel.liveOutput)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.body.monospaced())
+                    .textSelection(.enabled)
+                    .padding(.vertical, 4)
+            }
+            .frame(minHeight: 90, maxHeight: 180)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Live model output")
+        .accessibilityValue(viewModel.liveOutput.isEmpty ? "Waiting for model output" : viewModel.liveOutput)
     }
 
     private func summarySection(_ summary: BenchmarkSummary) -> some View {
@@ -430,9 +453,10 @@ struct BenchmarkView: View {
     }
 
     private var canStart: Bool {
-        !selectedModelNames.isEmpty
-            && viewModel.testSet != nil
-            && !viewModel.isRunning
+        BenchmarkRunReadiness.canStart(
+            selectedModelNames: selectedModelNames,
+            isRunning: viewModel.isRunning
+        )
     }
 
     private var runningLabel: String {

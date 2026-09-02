@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import XCTest
 @testable import OllamaModels
 
@@ -350,6 +351,7 @@ final class OllamaModelsTests: XCTestCase {
         XCTAssertEqual(summary?.bestGenerationTokensPerSecond ?? 0, 60, accuracy: 0.000_001)
     }
 
+    @MainActor
     func testClientRunsDeterministicStreamingBenchmark() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [BenchmarkStubURLProtocol.self]
@@ -358,13 +360,15 @@ final class OllamaModelsTests: XCTestCase {
             session: URLSession(configuration: configuration)
         )
 
+        var streamedOutput: [String] = []
         let sample = try await client.runBenchmark(
             configuration: BenchmarkConfiguration(
                 modelName: "qwen3:4b",
                 prompt: "Count from one to five.",
                 outputTokenLimit: 32
             ),
-            iteration: 2
+            iteration: 2,
+            onOutput: { streamedOutput.append($0) }
         )
 
         XCTAssertEqual(sample.modelName, "qwen3:4b")
@@ -373,6 +377,7 @@ final class OllamaModelsTests: XCTestCase {
         XCTAssertEqual(sample.loadDurationNanoseconds, 250_000_000)
         XCTAssertEqual(sample.promptEvaluationCount, 12)
         XCTAssertEqual(sample.evaluationCount, 80)
+        XCTAssertEqual(streamedOutput, ["One"])
         XCTAssertEqual(sample.generationTokensPerSecond, 40, accuracy: 0.000_001)
         XCTAssertGreaterThanOrEqual(sample.timeToFirstTokenSeconds, 0)
     }
@@ -433,6 +438,56 @@ final class OllamaModelsTests: XCTestCase {
     }
 
     @MainActor
+    func testBenchmarkViewModelPublishesStreamingOutput() async {
+        let viewModel = BenchmarkViewModel(
+            runStreamingBenchmark: { configuration, iteration, onOutput in
+                await onOutput("Hello")
+                await onOutput(" world")
+                return BenchmarkSample(
+                    modelName: configuration.modelName,
+                    iteration: iteration,
+                    startedAt: .now,
+                    timeToFirstTokenSeconds: 0.1,
+                    totalDurationNanoseconds: 1_000_000_000,
+                    loadDurationNanoseconds: 0,
+                    promptEvaluationCount: 4,
+                    promptEvaluationDurationNanoseconds: 100_000_000,
+                    evaluationCount: 2,
+                    evaluationDurationNanoseconds: 500_000_000,
+                    response: "Hello world"
+                )
+            },
+            unloadAllModels: {},
+            fetchOllamaVersion: { "Test" },
+            captureEnvironment: { BenchmarkEnvironmentSnapshot.current(ollamaVersion: "Test") }
+        )
+        viewModel.selectedModelName = "qwen3:4b"
+        viewModel.prompt = "Say hello."
+        viewModel.iterations = 1
+
+        await viewModel.run()
+
+        XCTAssertEqual(viewModel.liveOutput, "Hello world")
+        XCTAssertEqual(viewModel.samples.map(\.response), ["Hello world"])
+    }
+
+    func testBenchmarkCanStartWithoutJSONTestSet() {
+        XCTAssertTrue(
+            BenchmarkRunReadiness.canStart(
+                selectedModelNames: ["gemma4:12b-mlx"],
+                isRunning: false
+            )
+        )
+        XCTAssertFalse(BenchmarkRunReadiness.canStart(selectedModelNames: [], isRunning: false))
+        XCTAssertFalse(
+            BenchmarkRunReadiness.canStart(
+                selectedModelNames: ["gemma4:12b-mlx"],
+                isRunning: true
+            )
+        )
+    }
+
+    @MainActor
     func testBenchmarkViewModelRejectsBlankPromptBeforeExecution() async {
         let viewModel = BenchmarkViewModel { _, _ in
             XCTFail("The executor must not run for invalid input.")
@@ -455,6 +510,63 @@ final class OllamaModelsTests: XCTestCase {
         } catch {
             throw XCTSkip("Ollama is unavailable for the live integration check: \(error)")
         }
+    }
+
+    @MainActor
+    func testInferenceServerRecordsPersistLocally() throws {
+        let container = try ModelContainer(
+            for: InferenceServerRecord.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let server = InferenceServer(
+            name: "MLX Server",
+            port: 8_080,
+            kind: .openAICompatible
+        )
+        container.mainContext.insert(InferenceServerRecord(server: server, isActive: true))
+        try container.mainContext.save()
+
+        let records = try container.mainContext.fetch(FetchDescriptor<InferenceServerRecord>())
+
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records[0].server, server)
+        XCTAssertTrue(records[0].isActive)
+        XCTAssertEqual(records[0].server.endpointDescription, "http://127.0.0.1:8080")
+    }
+
+    @MainActor
+    func testOpenAICompatibleServerListsModelsAndRunsBenchmark() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [OpenAICompatibleStubURLProtocol.self]
+        let server = InferenceServer(
+            name: "Local MLX",
+            port: 8_080,
+            kind: .openAICompatible
+        )
+        let client = OllamaClient(server: server, session: URLSession(configuration: configuration))
+
+        let models = try await client.listModels()
+        let profile = try await client.modelDoctorProfile(for: try XCTUnwrap(models.first))
+        var streamedOutput: [String] = []
+        let sample = try await client.runBenchmark(
+            configuration: BenchmarkConfiguration(
+                modelName: "mlx-community/Qwen3-4B-MLX-4bit",
+                prompt: "Say hello.",
+                outputTokenLimit: 32
+            ),
+            iteration: 1,
+            onOutput: { streamedOutput.append($0) }
+        )
+
+        XCTAssertEqual(models.map(\.name), ["mlx-community/Qwen3-4B-MLX-4bit"])
+        XCTAssertTrue(models[0].supportsLocalBenchmark)
+        XCTAssertEqual(profile.name, "mlx-community/Qwen3-4B-MLX-4bit")
+        XCTAssertEqual(sample.response, "Hello from a local OpenAI-compatible server.")
+        XCTAssertEqual(streamedOutput, ["Hello ", "from a local OpenAI-compatible server."])
+        XCTAssertEqual(sample.promptEvaluationCount, 4)
+        XCTAssertEqual(sample.evaluationCount, 8)
+        let isAvailable = await client.isAvailable()
+        XCTAssertTrue(isAvailable)
     }
 
     private func makeStubbedSession() -> URLSession {
@@ -508,6 +620,57 @@ private final class OllamaStubURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+private final class OpenAICompatibleStubURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        guard let url = request.url else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+            return
+        }
+
+        let body: String
+        switch (url.path, request.httpMethod) {
+        case ("/v1/models", "GET"):
+            body = #"{"data":[{"id":"mlx-community/Qwen3-4B-MLX-4bit","created":1770000000}]}"#
+        case ("/v1/chat/completions", "POST"):
+            body = """
+            data: {"choices":[{"delta":{"content":"Hello "}}]}
+
+            data: {"choices":[{"delta":{"content":"from a local OpenAI-compatible server."}}],"usage":{"prompt_tokens":4,"completion_tokens":8}}
+
+            data: [DONE]
+
+            """
+        default:
+            finish(statusCode: 404, body: #"{"error":{"message":"unexpected path"}}"#)
+            return
+        }
+
+        finish(statusCode: 200, body: body)
+    }
+
+    override func stopLoading() {}
+
+    private func finish(statusCode: Int, body: String) {
+        let response = HTTPURLResponse(
+            url: request.url!,
+            statusCode: statusCode,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "text/event-stream"]
+        )!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(body.utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
 }
 
 private final class BenchmarkStubURLProtocol: URLProtocol {

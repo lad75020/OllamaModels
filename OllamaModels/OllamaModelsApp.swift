@@ -7,7 +7,11 @@ struct OllamaModelsApp: App {
         WindowGroup("OllamaModels") {
             ContentView()
         }
-        .modelContainer(for: [BenchmarkSessionRecord.self, BenchmarkRunRecord.self])
+        .modelContainer(for: [
+            BenchmarkSessionRecord.self,
+            BenchmarkRunRecord.self,
+            InferenceServerRecord.self
+        ])
         .defaultSize(width: 1_060, height: 700)
     }
 }

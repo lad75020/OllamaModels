@@ -5,14 +5,15 @@ import Observation
 @Observable
 final class BenchmarkViewModel {
     typealias Executor = @Sendable (BenchmarkConfiguration, Int) async throws -> BenchmarkSample
+    typealias StreamingExecutor = @Sendable (BenchmarkConfiguration, Int, @escaping BenchmarkOutputHandler) async throws -> BenchmarkSample
     typealias Unloader = @Sendable () async throws -> Void
     typealias VersionProvider = @Sendable () async throws -> String
     typealias EnvironmentCapture = @Sendable () -> BenchmarkEnvironmentSnapshot
     typealias PersistenceHandler = @MainActor (BenchmarkSessionSnapshot) throws -> Void
 
-    private let executor: Executor
-    private let unloadAllModels: Unloader
-    private let fetchOllamaVersion: VersionProvider
+    private var executor: StreamingExecutor
+    private var unloadAllModels: Unloader
+    private var fetchOllamaVersion: VersionProvider
     private let captureEnvironment: EnvironmentCapture
     private var benchmarkTask: Task<Void, Never>?
 
@@ -33,6 +34,7 @@ final class BenchmarkViewModel {
     private(set) var currentModelName = ""
     private(set) var currentModelIndex = 0
     private(set) var totalModels = 0
+    private(set) var liveOutput = ""
     var errorMessage: String?
     var noticeMessage: String?
 
@@ -47,8 +49,12 @@ final class BenchmarkViewModel {
 
     convenience init(client: OllamaClient = OllamaClient()) {
         self.init(
-            runBenchmark: { configuration, iteration in
-                try await client.runBenchmark(configuration: configuration, iteration: iteration)
+            runStreamingBenchmark: { configuration, iteration, onOutput in
+                try await client.runBenchmark(
+                    configuration: configuration,
+                    iteration: iteration,
+                    onOutput: onOutput
+                )
             },
             unloadAllModels: {
                 try await client.unloadAllModelsAndWait()
@@ -64,7 +70,9 @@ final class BenchmarkViewModel {
 
     convenience init(runBenchmark: @escaping Executor) {
         self.init(
-            runBenchmark: runBenchmark,
+            runStreamingBenchmark: { configuration, iteration, _ in
+                try await runBenchmark(configuration, iteration)
+            },
             unloadAllModels: {},
             fetchOllamaVersion: { "Unknown" },
             captureEnvironment: {
@@ -74,12 +82,26 @@ final class BenchmarkViewModel {
     }
 
     init(
+        runStreamingBenchmark: @escaping StreamingExecutor,
+        unloadAllModels: @escaping Unloader,
+        fetchOllamaVersion: @escaping VersionProvider,
+        captureEnvironment: @escaping EnvironmentCapture
+    ) {
+        executor = runStreamingBenchmark
+        self.unloadAllModels = unloadAllModels
+        self.fetchOllamaVersion = fetchOllamaVersion
+        self.captureEnvironment = captureEnvironment
+    }
+
+    init(
         runBenchmark: @escaping Executor,
         unloadAllModels: @escaping Unloader,
         fetchOllamaVersion: @escaping VersionProvider,
         captureEnvironment: @escaping EnvironmentCapture
     ) {
-        executor = runBenchmark
+        executor = { configuration, iteration, _ in
+            try await runBenchmark(configuration, iteration)
+        }
         self.unloadAllModels = unloadAllModels
         self.fetchOllamaVersion = fetchOllamaVersion
         self.captureEnvironment = captureEnvironment
@@ -124,6 +146,24 @@ final class BenchmarkViewModel {
         benchmarkTask?.cancel()
     }
 
+    func configure(client: OllamaClient) {
+        guard !isRunning else { return }
+        executor = { configuration, iteration, onOutput in
+            try await client.runBenchmark(
+                configuration: configuration,
+                iteration: iteration,
+                onOutput: onOutput
+            )
+        }
+        unloadAllModels = {
+            try await client.unloadAllModelsAndWait()
+        }
+        fetchOllamaVersion = {
+            try await client.version()
+        }
+        clearResults()
+    }
+
     func clearResults() {
         guard !isRunning else { return }
         samples = []
@@ -136,6 +176,7 @@ final class BenchmarkViewModel {
         currentModelName = ""
         currentModelIndex = 0
         totalModels = 0
+        liveOutput = ""
         errorMessage = nil
         noticeMessage = nil
     }
@@ -187,6 +228,7 @@ final class BenchmarkViewModel {
         currentModelName = ""
         currentModelIndex = 0
         totalModels = normalizedTargets.count
+        liveOutput = ""
         errorMessage = nil
         noticeMessage = nil
         isRunning = true
@@ -243,7 +285,10 @@ final class BenchmarkViewModel {
                             prompt: test.prompt,
                             outputTokenLimit: prepared.outputTokenLimit
                         )
-                        let sample = try await executor(configuration, runNumber)
+                        liveOutput = ""
+                        let sample = try await executor(configuration, runNumber) { [weak self] output in
+                            self?.liveOutput += output
+                        }
                         samples.append(sample.evaluated(using: test))
                         completedIterations += 1
                     }

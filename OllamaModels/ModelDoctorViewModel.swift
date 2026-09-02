@@ -10,10 +10,10 @@ final class ModelDoctorViewModel {
     typealias Unloader = @Sendable () async throws -> Void
     typealias HostCapture = @Sendable () -> ModelDoctorHostSnapshot
 
-    private let profileProvider: ProfileProvider
-    private let probeRunner: ProbeRunner
-    private let runtimeProvider: RuntimeProvider
-    private let unloader: Unloader
+    private var profileProvider: ProfileProvider
+    private var probeRunner: ProbeRunner
+    private var runtimeProvider: RuntimeProvider
+    private var unloader: Unloader
     private let hostCapture: HostCapture
     private var task: Task<Void, Never>?
 
@@ -58,6 +58,15 @@ final class ModelDoctorViewModel {
 
     func cancel() {
         task?.cancel()
+    }
+
+    func configure(client: OllamaClient) {
+        guard !isRunning else { return }
+        profileProvider = { try await client.modelDoctorProfile(for: $0) }
+        probeRunner = { try await client.runBenchmark(configuration: $0, iteration: $1) }
+        runtimeProvider = { try await client.runtimeStatus() }
+        unloader = { try await client.unloadAllModelsAndWait() }
+        clear()
     }
 
     func clear() {
