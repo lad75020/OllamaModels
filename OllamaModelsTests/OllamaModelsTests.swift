@@ -687,6 +687,15 @@ private final class OpenAICompatibleStubURLProtocol: URLProtocol {
         case ("/v1/models", "GET"):
             body = #"{"data":[{"id":"mlx-community/Qwen3-4B-MLX-4bit","created":1770000000}]}"#
         case ("/v1/chat/completions", "POST") where request.timeoutInterval == 90:
+            guard let requestBody = Self.bodyData(from: request),
+                  let payload = try? JSONSerialization.jsonObject(with: requestBody) as? [String: Any],
+                  payload["enable_thinking"] as? Bool == false else {
+                finish(
+                    statusCode: 400,
+                    body: #"{"error":{"message":"expected enable_thinking to be false"}}"#
+                )
+                return
+            }
             body = """
             data: {"choices":[{"delta":{"content":"Hello "}}]}
 
@@ -704,6 +713,26 @@ private final class OpenAICompatibleStubURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+
+    private static func bodyData(from request: URLRequest) -> Data? {
+        if let body = request.httpBody {
+            return body
+        }
+        guard let stream = request.httpBodyStream else { return nil }
+
+        stream.open()
+        defer { stream.close() }
+
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1_024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            guard count >= 0 else { return nil }
+            if count == 0 { break }
+            data.append(buffer, count: count)
+        }
+        return data
+    }
 
     private func finish(statusCode: Int, body: String) {
         let response = HTTPURLResponse(

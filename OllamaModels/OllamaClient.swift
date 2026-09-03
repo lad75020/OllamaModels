@@ -364,7 +364,8 @@ struct OllamaClient: Sendable {
                     model: configuration.modelName,
                     messages: [.init(role: "user", content: configuration.prompt)],
                     maxTokens: configuration.outputTokenLimit,
-                    stream: true
+                    stream: true,
+                    enableThinking: false
                 )
             )
             let request = try makeRequest(

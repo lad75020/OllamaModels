@@ -323,14 +323,22 @@ struct OpenAIChatCompletionRequest: Encodable, Sendable {
     let temperature: Double
     let seed: Int
     let maxTokens: Int
+    let enableThinking: Bool?
 
-    init(model: String, messages: [Message], maxTokens: Int, stream: Bool) {
+    init(
+        model: String,
+        messages: [Message],
+        maxTokens: Int,
+        stream: Bool,
+        enableThinking: Bool? = nil
+    ) {
         self.model = model
         self.messages = messages
         self.stream = stream
         self.temperature = 0
         self.seed = 42
         self.maxTokens = maxTokens
+        self.enableThinking = enableThinking
     }
 
     enum CodingKeys: String, CodingKey {
@@ -340,6 +348,7 @@ struct OpenAIChatCompletionRequest: Encodable, Sendable {
         case temperature
         case seed
         case maxTokens = "max_tokens"
+        case enableThinking = "enable_thinking"
     }
 }
 
