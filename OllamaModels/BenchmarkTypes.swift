@@ -84,11 +84,18 @@ struct BenchmarkConfiguration: Equatable, Sendable {
     let modelName: String
     let prompt: String
     let outputTokenLimit: Int
+    let inferenceTimeoutSeconds: Int
 
-    init(modelName: String, prompt: String, outputTokenLimit: Int) {
+    init(
+        modelName: String,
+        prompt: String,
+        outputTokenLimit: Int,
+        inferenceTimeoutSeconds: Int = 120
+    ) {
         self.modelName = modelName
         self.prompt = prompt
         self.outputTokenLimit = min(max(outputTokenLimit, 1), 2_048)
+        self.inferenceTimeoutSeconds = min(max(inferenceTimeoutSeconds, 1), 3_600)
     }
 }
 

@@ -22,6 +22,7 @@ final class BenchmarkViewModel {
     var testSet: BenchmarkTestSet?
     var iterations = 3
     var outputTokenLimit = 128
+    var inferenceTimeoutSeconds = 120
 
     private(set) var samples: [BenchmarkSample] = []
     private(set) var completedSessions: [BenchmarkSessionSnapshot] = []
@@ -186,6 +187,7 @@ final class BenchmarkViewModel {
         let tests: [BenchmarkTestCase]
         let iterations: Int
         let outputTokenLimit: Int
+        let inferenceTimeoutSeconds: Int
     }
 
     private func prepareQueue(targets: [BenchmarkModelTarget]) -> PreparedQueue? {
@@ -218,6 +220,7 @@ final class BenchmarkViewModel {
         let iterationCount = min(max(iterations, 1), 10)
         iterations = iterationCount
         outputTokenLimit = min(max(outputTokenLimit, 1), 2_048)
+        inferenceTimeoutSeconds = min(max(inferenceTimeoutSeconds, 1), 3_600)
         samples = []
         completedSessions = []
         completedIterations = 0
@@ -237,7 +240,8 @@ final class BenchmarkViewModel {
             targets: normalizedTargets,
             tests: tests,
             iterations: iterationCount,
-            outputTokenLimit: outputTokenLimit
+            outputTokenLimit: outputTokenLimit,
+            inferenceTimeoutSeconds: inferenceTimeoutSeconds
         )
     }
 
@@ -283,7 +287,8 @@ final class BenchmarkViewModel {
                         let configuration = BenchmarkConfiguration(
                             modelName: target.name,
                             prompt: test.prompt,
-                            outputTokenLimit: prepared.outputTokenLimit
+                            outputTokenLimit: prepared.outputTokenLimit,
+                            inferenceTimeoutSeconds: prepared.inferenceTimeoutSeconds
                         )
                         liveOutput = ""
                         let sample = try await executor(configuration, runNumber) { [weak self] output in

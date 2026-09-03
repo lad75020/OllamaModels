@@ -314,6 +314,24 @@ final class OllamaModelsTests: XCTestCase {
         XCTAssertEqual(sample.generationTokensPerSecond, 40, accuracy: 0.000_001)
     }
 
+    func testBenchmarkConfigurationClampsInferenceTimeout() {
+        let minimum = BenchmarkConfiguration(
+            modelName: "qwen3:4b",
+            prompt: "Say hello.",
+            outputTokenLimit: 32,
+            inferenceTimeoutSeconds: 0
+        )
+        let maximum = BenchmarkConfiguration(
+            modelName: "qwen3:4b",
+            prompt: "Say hello.",
+            outputTokenLimit: 32,
+            inferenceTimeoutSeconds: 9_999
+        )
+
+        XCTAssertEqual(minimum.inferenceTimeoutSeconds, 1)
+        XCTAssertEqual(maximum.inferenceTimeoutSeconds, 3_600)
+    }
+
     func testBenchmarkSummaryAggregatesMultipleIterations() {
         let samples = [
             BenchmarkSample(
@@ -365,7 +383,8 @@ final class OllamaModelsTests: XCTestCase {
             configuration: BenchmarkConfiguration(
                 modelName: "qwen3:4b",
                 prompt: "Count from one to five.",
-                outputTokenLimit: 32
+                outputTokenLimit: 32,
+                inferenceTimeoutSeconds: 75
             ),
             iteration: 2,
             onOutput: { streamedOutput.append($0) }
@@ -380,6 +399,31 @@ final class OllamaModelsTests: XCTestCase {
         XCTAssertEqual(streamedOutput, ["One"])
         XCTAssertEqual(sample.generationTokensPerSecond, 40, accuracy: 0.000_001)
         XCTAssertGreaterThanOrEqual(sample.timeToFirstTokenSeconds, 0)
+    }
+
+    @MainActor
+    func testClientBenchmarksOnlyFinalAnswerAfterReasoningStream() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ReasoningBenchmarkStubURLProtocol.self]
+        let client = OllamaClient(
+            baseURL: URL(string: "http://reasoning-benchmark.test")!,
+            session: URLSession(configuration: configuration)
+        )
+
+        var streamedOutput: [String] = []
+        let sample = try await client.runBenchmark(
+            configuration: BenchmarkConfiguration(
+                modelName: "qwen3:4b",
+                prompt: "What is 2 + 2?",
+                outputTokenLimit: 32
+            ),
+            iteration: 1,
+            onOutput: { streamedOutput.append($0) }
+        )
+
+        XCTAssertEqual(sample.response, "4")
+        XCTAssertEqual(streamedOutput, ["4"])
+        XCTAssertGreaterThanOrEqual(sample.timeToFirstTokenSeconds, 0.05)
     }
 
     func testClientSurfacesBenchmarkServerErrorBody() async {
@@ -552,7 +596,8 @@ final class OllamaModelsTests: XCTestCase {
             configuration: BenchmarkConfiguration(
                 modelName: "mlx-community/Qwen3-4B-MLX-4bit",
                 prompt: "Say hello.",
-                outputTokenLimit: 32
+                outputTokenLimit: 32,
+                inferenceTimeoutSeconds: 90
             ),
             iteration: 1,
             onOutput: { streamedOutput.append($0) }
@@ -641,7 +686,7 @@ private final class OpenAICompatibleStubURLProtocol: URLProtocol {
         switch (url.path, request.httpMethod) {
         case ("/v1/models", "GET"):
             body = #"{"data":[{"id":"mlx-community/Qwen3-4B-MLX-4bit","created":1770000000}]}"#
-        case ("/v1/chat/completions", "POST"):
+        case ("/v1/chat/completions", "POST") where request.timeoutInterval == 90:
             body = """
             data: {"choices":[{"delta":{"content":"Hello "}}]}
 
@@ -696,6 +741,7 @@ private final class BenchmarkStubURLProtocol: URLProtocol {
               payload["model"] as? String == "qwen3:4b",
               payload["prompt"] as? String == "Count from one to five.",
               payload["stream"] as? Bool == true,
+              request.timeoutInterval == 75,
               let options = payload["options"] as? [String: Any],
               (options["num_predict"] as? NSNumber)?.intValue == 32,
               (options["temperature"] as? NSNumber)?.doubleValue == 0 else {
@@ -744,4 +790,42 @@ private final class BenchmarkStubURLProtocol: URLProtocol {
         client?.urlProtocol(self, didLoad: Data(body.utf8))
         client?.urlProtocolDidFinishLoading(self)
     }
+}
+
+private final class ReasoningBenchmarkStubURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        let response = HTTPURLResponse(
+            url: request.url!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/x-ndjson"]
+        )!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(
+            self,
+            didLoad: Data((#"{"model":"qwen3:4b","thinking":"I need to calculate this.","done":false}"# + "\n").utf8)
+        )
+
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self else { return }
+            self.client?.urlProtocol(
+                self,
+                didLoad: Data(
+                    #"{"model":"qwen3:4b","response":"4","done":true,"total_duration":100000000,"eval_count":1,"eval_duration":100000000}"#
+                        .utf8
+                )
+            )
+            self.client?.urlProtocolDidFinishLoading(self)
+        }
+    }
+
+    override func stopLoading() {}
 }

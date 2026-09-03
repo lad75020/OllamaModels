@@ -279,7 +279,12 @@ struct OllamaClient: Sendable {
                     )
                 )
             )
-            let request = try makeRequest(path: "api/generate", method: "POST", body: body)
+            let request = try makeRequest(
+                path: "api/generate",
+                method: "POST",
+                body: body,
+                timeoutSeconds: configuration.inferenceTimeoutSeconds
+            )
             let clock = ContinuousClock()
             let startedAt = Date()
             let started = clock.now
@@ -301,11 +306,10 @@ struct OllamaClient: Sendable {
                     throw OllamaClientError.server(message)
                 }
 
-                let hasOutput = !(event.response ?? "").isEmpty || !(event.thinking ?? "").isEmpty
-                if firstTokenSeconds == nil, hasOutput {
+                let output = event.response ?? ""
+                if firstTokenSeconds == nil, !output.isEmpty {
                     firstTokenSeconds = Self.seconds(from: started.duration(to: clock.now))
                 }
-                let output = event.response ?? ""
                 responseText += output
                 if !output.isEmpty {
                     await onOutput(output)
@@ -363,7 +367,12 @@ struct OllamaClient: Sendable {
                     stream: true
                 )
             )
-            let request = try makeRequest(path: "v1/chat/completions", method: "POST", body: body)
+            let request = try makeRequest(
+                path: "v1/chat/completions",
+                method: "POST",
+                body: body,
+                timeoutSeconds: configuration.inferenceTimeoutSeconds
+            )
             let clock = ContinuousClock()
             let startedAt = Date()
             let started = clock.now
@@ -449,7 +458,8 @@ struct OllamaClient: Sendable {
     private func makeRequest(
         path: String,
         method: String = "GET",
-        body: Data? = nil
+        body: Data? = nil,
+        timeoutSeconds: Int? = nil
     ) throws -> URLRequest {
         var url = baseURL
         for component in path.split(separator: "/") {
@@ -462,6 +472,9 @@ struct OllamaClient: Sendable {
 
         var request = URLRequest(url: url)
         request.httpMethod = method
+        if let timeoutSeconds {
+            request.timeoutInterval = TimeInterval(timeoutSeconds)
+        }
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if body != nil {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")

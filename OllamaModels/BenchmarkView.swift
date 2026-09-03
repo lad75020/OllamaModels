@@ -190,6 +190,25 @@ struct BenchmarkView: View {
                         .disabled(viewModel.isRunning)
                     }
 
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Inference timeout")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 6) {
+                            TextField(
+                                "Seconds",
+                                value: $viewModel.inferenceTimeoutSeconds,
+                                format: .number
+                            )
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 78)
+                            Text("seconds")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .disabled(viewModel.isRunning)
+                    }
+
                     Spacer()
                 }
 
